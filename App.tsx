@@ -12,7 +12,8 @@ import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
-const NEW_BRAND_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Cpath d='M50,320 L250,220 Q350,170 480,200 T350,350 Q200,350 180,260 Q180,160 300,100 T520,80 Q350,60 220,160 T180,300' fill='none' stroke='%23134e4a' stroke-width='35' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+// Cập nhật đường dẫn logo tới file thực tế
+const NEW_BRAND_LOGO = "/upload/logo.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
