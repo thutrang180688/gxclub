@@ -16,20 +16,31 @@ declare global {
   }
 }
 
-// @ts-ignore: import.meta.env may not be recognized by standard TypeScript without Vite types
+// @ts-ignore: import.meta.env handles environmental variables
 const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onToggleAdmin }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [logoUrl, setLogoUrl] = useState(config.logo);
+  const [isGsiLoaded, setIsGsiLoaded] = useState(false);
 
-  // Cập nhật logoUrl khi config thay đổi từ Admin
   useEffect(() => {
     setLogoUrl(config.logo);
   }, [config.logo]);
 
+  // Kiểm tra script Google đã sẵn sàng chưa
   useEffect(() => {
-    if (typeof window !== 'undefined' && !user && showLoginModal && GOOGLE_CLIENT_ID) {
+    const checkGsi = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        setIsGsiLoaded(true);
+        clearInterval(checkGsi);
+      }
+    }, 500);
+    return () => clearInterval(checkGsi);
+  }, []);
+
+  useEffect(() => {
+    if (showLoginModal && !user && isGsiLoaded && GOOGLE_CLIENT_ID) {
       const handleCredentialResponse = (response: any) => {
         try {
           const base64Url = response.credential.split('.')[1];
@@ -41,39 +52,47 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
           onGoogleLogin(payload.email, payload.name, payload.picture);
           setShowLoginModal(false);
         } catch (e) {
-          console.error("Lỗi đăng nhập Google:", e);
+          console.error("Lỗi xác thực Google:", e);
         }
       };
 
-      const initGoogle = () => {
-        if (window.google && window.google.accounts) {
-          window.google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID, 
-            callback: handleCredentialResponse,
-          });
-          window.google.accounts.id.renderButton(
-            document.getElementById("googleBtn"),
-            { theme: "outline", size: "large", width: "100%" }
-          );
-        }
-      };
-      setTimeout(initGoogle, 500);
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false,
+        });
+
+        const renderTimeout = setTimeout(() => {
+          const btnElem = document.getElementById("googleBtn");
+          if (btnElem) {
+            window.google.accounts.id.renderButton(btnElem, {
+              theme: "outline",
+              size: "large",
+              width: 280,
+              text: "signin_with",
+              shape: "pill"
+            });
+          }
+        }, 300);
+        return () => clearTimeout(renderTimeout);
+      } catch (err) {
+        console.error("Google Auth Init Error:", err);
+      }
     }
-  }, [user, showLoginModal]);
+  }, [showLoginModal, user, isGsiLoaded]);
 
   return (
     <>
       <header className="bg-teal-900 text-white shadow-xl sticky top-0 z-40 border-b border-teal-800 backdrop-blur-md bg-opacity-95">
         <div className="max-w-[1440px] mx-auto px-4 h-16 lg:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Loại bỏ bg-white và ring để logo trong suốt hoạt động chuẩn */}
             <div className="p-1 flex items-center justify-center min-w-[40px]">
               <img 
                 src={logoUrl} 
                 alt="Logo" 
                 className="h-10 lg:h-14 w-auto object-contain transition-all duration-500"
                 onError={() => {
-                  // Fallback nếu link ảnh hỏng
                   setLogoUrl("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M10,80 L40,60 Q60,45 85,50 T60,85 Q30,85 25,65 Q25,40 50,25 T90,20 Q60,15 35,40 T30,75' fill='none' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E");
                 }}
               />
@@ -134,12 +153,29 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Dành cho Hội viên & Quản trị</p>
             </div>
 
-            <div className="space-y-4">
-              <div id="googleBtn" className="min-h-[40px] flex justify-center"></div>
+            <div className="space-y-4 flex flex-col items-center">
+              <div id="googleBtn" className="min-h-[40px] w-full flex justify-center">
+                {!GOOGLE_CLIENT_ID && (
+                  <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-200 w-full">
+                    <p className="text-[10px] font-black text-red-700 uppercase leading-relaxed">
+                      LỖI: THIẾU GOOGLE CLIENT ID
+                    </p>
+                    <p className="text-[8px] text-red-500 mt-2 font-bold leading-normal">
+                      Vui lòng thêm biến <span className="underline italic">VITE_GOOGLE_CLIENT_ID</span> vào Vercel với giá trị là mã Client ID lấy từ Google Cloud.
+                    </p>
+                  </div>
+                )}
+                {GOOGLE_CLIENT_ID && !isGsiLoaded && (
+                  <div className="flex items-center gap-2 text-[10px] font-black text-teal-600 animate-pulse">
+                    <div className="w-3 h-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                    ĐANG KẾT NỐI GOOGLE...
+                  </div>
+                )}
+              </div>
               
-              <div className="relative py-2">
+              <div className="relative py-2 w-full">
                 <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-                <div className="relative flex justify-center text-[8px] uppercase font-black text-gray-300"><span className="bg-white px-2 italic">Hoặc truy cập nhanh</span></div>
+                <div className="relative flex justify-center text-[8px] uppercase font-black text-gray-300"><span className="bg-white px-2 italic">Hoặc truy cập khẩn cấp</span></div>
               </div>
 
               <button 
@@ -147,9 +183,9 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
                    onGoogleLogin('thutrang180688@gmail.com', 'Quản Trị Viên', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin');
                    setShowLoginModal(false);
                 }}
-                className="w-full bg-teal-50 text-teal-700 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-teal-100 border border-teal-100 transition-all"
+                className="w-full bg-teal-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-black border border-teal-900 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
               >
-                🔐 Dùng thử quyền Admin
+                <span>🔐</span> ĐĂNG NHẬP ADMIN NHANH
               </button>
 
               <button 
@@ -158,6 +194,10 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
               >
                 Hủy bỏ
               </button>
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-gray-100 text-[8px] text-gray-400 text-center font-bold uppercase italic leading-tight">
+               Lưu ý: Nếu nút đăng nhập Google không hiện, hãy kiểm tra mục "Authorized JavaScript origins" trong Google Cloud.
             </div>
           </div>
         </div>
