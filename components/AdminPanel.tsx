@@ -38,7 +38,6 @@ const AdminPanel: React.FC<Props> = ({
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
 
-  // Hàm cập nhật quyền mới hỗ trợ set Admin cho Root Admin
   const handleUpdateUserRole = (email: string, targetRole: Role) => {
     if (!isAdmin) return;
     if (email.toLowerCase() === rootEmail.toLowerCase()) return;
@@ -47,10 +46,8 @@ const AdminPanel: React.FC<Props> = ({
     const existingIdx = permissions.findIndex(p => p.email.toLowerCase() === email.toLowerCase());
     
     if (targetRole === 'USER') {
-      // Hủy quyền: Xóa khỏi mảng permissions
       updatedPerms = permissions.filter(p => p.email.toLowerCase() !== email.toLowerCase());
     } else {
-      // Cấp hoặc đổi quyền
       if (existingIdx > -1) {
         updatedPerms = permissions.map((p, i) => i === existingIdx ? { ...p, role: targetRole } : p);
       } else {
@@ -248,7 +245,6 @@ const AdminPanel: React.FC<Props> = ({
                         
                         {!isRoot && (
                           <div className="flex gap-2">
-                             {/* Nút Set Admin: Chỉ Root Admin mới có thể thực hiện */}
                              {isRootAdmin && (
                                <button 
                                  onClick={() => handleUpdateUserRole(regUser.email, role === 'ADMIN' ? 'USER' : 'ADMIN')} 
@@ -258,7 +254,6 @@ const AdminPanel: React.FC<Props> = ({
                                </button>
                              )}
 
-                             {/* Nút Set Manager */}
                              <button 
                               onClick={() => handleUpdateUserRole(regUser.email, role === 'MANAGER' ? 'USER' : 'MANAGER')} 
                               className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'MANAGER' ? 'bg-red-50 text-red-600' : 'bg-teal-600 text-white'}`}
@@ -289,7 +284,6 @@ const AdminPanel: React.FC<Props> = ({
                       const sessionInfo = schedule.find(s => s.id === r.classId);
                       return (
                         <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
-                          {/* Hiển thị thông tin lớp học ở góc */}
                           <div className="absolute top-0 right-0 px-4 py-2 bg-teal-900 text-white rounded-bl-2xl">
                              <p className="text-[8px] font-black uppercase tracking-widest">
                                Lớp: {sessionInfo?.className || 'Lớp đã xóa'}

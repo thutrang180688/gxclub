@@ -12,7 +12,7 @@ import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
-// Cập nhật đường dẫn logo tới file thực tế
+// Đường dẫn logo thực tế bạn đã tạo
 const NEW_BRAND_LOGO = "/upload/logo.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
@@ -42,7 +42,6 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Logic phản ứng thời gian thực khi Admin thay đổi quyền
   useEffect(() => {
     if (currentUser) {
       const lowerEmail = currentUser.email.toLowerCase();
@@ -56,11 +55,7 @@ const App: React.FC = () => {
         const updatedUser = { ...currentUser, role: newRole };
         setCurrentUser(updatedUser);
         localStorage.setItem('gx_user_v7', JSON.stringify(updatedUser));
-        
-        // Nếu bị hạ quyền về USER và đang mở Admin Panel thì đóng lại ngay
-        if (newRole === 'USER') {
-          setShowAdmin(false);
-        }
+        if (newRole === 'USER') setShowAdmin(false);
       }
     }
   }, [permissions, currentUser?.email]);
