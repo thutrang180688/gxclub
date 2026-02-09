@@ -14,7 +14,7 @@ const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com';
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
 // ĐƯỜNG DẪN LOGO CHÍNH (Thay đổi tại đây)
-const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086442379_195b472edc_o.png";
+const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086559890_234d68a167_o.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
