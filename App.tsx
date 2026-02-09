@@ -14,7 +14,7 @@ const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com';
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
 // ĐƯỜNG DẪN LOGO CHÍNH (Thay đổi tại đây)
-const NEW_BRAND_LOGO = "http://ciputraclub.vn/wp-content/uploads/2026/02/logoW-1.png";
+const NEW_BRAND_LOGO = "https://asset.brandfetch.io/idK3d0V5wm/id_gDb3X4L.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
