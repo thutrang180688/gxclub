@@ -12,7 +12,20 @@ interface Props {
 }
 
 const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings }) => {
-  const classes = schedule.filter(s => s.dayIndex === dayIndex).sort((a, b) => a.time.localeCompare(b.time));
+  // Helper to get total minutes from time string (e.g., "08:00 - 09:00" -> 480)
+  const getTimeValue = (timeStr: string) => {
+    try {
+      const startTime = timeStr.split('-')[0].trim();
+      const [hours, minutes] = startTime.split(':').map(Number);
+      return (hours || 0) * 60 + (minutes || 0);
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const classes = schedule
+    .filter(s => s.dayIndex === dayIndex)
+    .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time));
 
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);

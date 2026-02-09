@@ -23,7 +23,6 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [logoUrl, setLogoUrl] = useState(config.logo);
   const [isGsiLoaded, setIsGsiLoaded] = useState(false);
-  const currentOrigin = window.location.origin;
 
   useEffect(() => {
     setLogoUrl(config.logo);
@@ -145,16 +144,16 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-teal-950/80 backdrop-blur-md animate-fade">
           <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white/20">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-8 h-8" alt="G" />
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-inner">
+                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-10 h-10" alt="G" />
               </div>
-              <h3 className="text-xl font-black text-teal-900 uppercase tracking-tight">Đăng nhập hệ thống</h3>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Dành cho Hội viên & Quản trị</p>
+              <h3 className="text-2xl font-black text-teal-900 uppercase tracking-tight">Đăng nhập</h3>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Hệ thống Lịch tập Ciputra Club</p>
             </div>
 
-            <div className="space-y-4 flex flex-col items-center">
-              <div id="googleBtn" className="min-h-[40px] w-full flex justify-center">
+            <div className="space-y-6 flex flex-col items-center">
+              <div id="googleBtn" className="min-h-[44px] w-full flex justify-center">
                 {!GOOGLE_CLIENT_ID && (
                   <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-200 w-full">
                     <p className="text-[10px] font-black text-red-700 uppercase">LỖI: THIẾU CLIENT ID</p>
@@ -168,42 +167,17 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
                 )}
               </div>
               
-              <div className="relative py-2 w-full">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-                <div className="relative flex justify-center text-[8px] uppercase font-black text-gray-300"><span className="bg-white px-2 italic">Hoặc truy cập khẩn cấp</span></div>
-              </div>
-
-              <button 
-                onClick={() => {
-                   onGoogleLogin('thutrang180688@gmail.com', 'Quản Trị Viên', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin');
-                   setShowLoginModal(false);
-                }}
-                className="w-full bg-teal-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-black border border-teal-900 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
-              >
-                <span>🔐</span> ĐĂNG NHẬP ADMIN NHANH
-              </button>
-
               <button 
                 onClick={() => setShowLoginModal(false)}
-                className="w-full text-slate-400 py-2 font-black text-[9px] uppercase tracking-widest hover:text-slate-600"
+                className="w-full text-slate-400 py-2 font-black text-[10px] uppercase tracking-widest hover:text-slate-600 transition-colors"
               >
-                Hủy bỏ
+                Quay lại
               </button>
             </div>
-            
-            {/* PHẦN CHẨN ĐOÁN LỖI DÀNH CHO BẠN */}
-            <div className="mt-6 pt-4 border-t border-dashed border-gray-100 space-y-3">
-               <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
-                  <p className="text-[8px] text-amber-700 font-black uppercase mb-1">🛠️ Khắc phục lỗi 400 origin_mismatch:</p>
-                  <p className="text-[7px] text-amber-600 font-bold leading-tight">
-                    Copy chính xác link dưới đây dán vào mục <b>Authorized JavaScript origins</b> trên Google Cloud Console:
-                  </p>
-                  <div className="mt-2 p-2 bg-white rounded border border-amber-200 font-mono text-[9px] text-teal-800 break-all select-all cursor-pointer" title="Nhấn để chọn tất cả">
-                    {currentOrigin}
-                  </div>
-               </div>
-               <p className="text-[7px] text-gray-400 text-center font-bold uppercase italic">
-                  Lưu ý: Sau khi lưu trên Google Cloud, hãy chờ 5 phút để cập nhật.
+
+            <div className="mt-8 pt-6 border-t border-gray-100">
+               <p className="text-[8px] text-gray-400 text-center font-bold uppercase leading-relaxed opacity-60">
+                  Bằng cách đăng nhập, bạn đồng ý với các quy định bảo mật và nội quy phòng tập của chúng tôi.
                </p>
             </div>
           </div>
