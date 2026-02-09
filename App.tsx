@@ -13,7 +13,7 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
-// ĐƯỜNG DẪN LOGO CHÍNH (Dòng 16)
+// ĐƯỜNG DẪN LOGO CHÍNH (Thay đổi tại đây)
 const NEW_BRAND_LOGO = "/upload/logo.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
@@ -43,6 +43,9 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Hàm kiểm tra logo mặc định
+  const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
+
   useEffect(() => {
     if (currentUser) {
       const lowerEmail = currentUser.email.toLowerCase();
@@ -61,9 +64,6 @@ const App: React.FC = () => {
     }
   }, [permissions, currentUser?.email]);
 
-  // Hàm kiểm tra xem logo có phải là logo mặc định (SVG) không
-  const isDefaultLogo = (url: string) => !url || url.startsWith('data:image/svg+xml');
-
   const syncFromCloud = async () => {
     if (!GAS_WEBAPP_URL) {
       loadFromLocalStorage();
@@ -76,12 +76,8 @@ const App: React.FC = () => {
       if (data.schedule) setSchedule(data.schedule);
       
       if (data.header) {
-        // Ưu tiên NEW_BRAND_LOGO nếu logo từ cloud là logo mặc định
-        const finalLogo = isDefaultLogo(data.header.logo) ? NEW_BRAND_LOGO : data.header.logo;
-        setHeaderConfig({
-          ...data.header,
-          logo: finalLogo
-        });
+        const finalLogo = isOldLogo(data.header.logo) ? NEW_BRAND_LOGO : data.header.logo;
+        setHeaderConfig({ ...data.header, logo: finalLogo });
       } else {
         setHeaderConfig(DEFAULT_HEADER);
       }
@@ -92,7 +88,7 @@ const App: React.FC = () => {
       if (data.ratings) setRatings(data.ratings);
       setIsLoading(false);
     } catch (error) {
-      console.error("Lỗi Cloud:", error);
+      console.error("Cloud Error:", error);
       loadFromLocalStorage();
       setIsLoading(false);
     }
@@ -106,8 +102,7 @@ const App: React.FC = () => {
     if (sS) setSchedule(JSON.parse(sS));
     if (sH) {
       const localHeader = JSON.parse(sH);
-      // Ưu tiên NEW_BRAND_LOGO nếu logo lưu trong máy là logo mặc định
-      const finalLogo = isDefaultLogo(localHeader.logo) ? NEW_BRAND_LOGO : localHeader.logo;
+      const finalLogo = isOldLogo(localHeader.logo) ? NEW_BRAND_LOGO : localHeader.logo;
       setHeaderConfig({ ...localHeader, logo: finalLogo });
     } else {
       setHeaderConfig(DEFAULT_HEADER);
@@ -136,9 +131,7 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, data: payload })
       });
-    } catch (e) {
-      console.warn("Post sync warning:", e);
-    }
+    } catch (e) { console.warn("Sync warning:", e); }
   };
 
   const handleUpdateSchedule = (newSchedule: ClassSession[]) => {
@@ -196,7 +189,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-teal-900 flex flex-col items-center justify-center text-white p-4">
         <div className="w-16 h-16 border-4 border-teal-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-black uppercase tracking-[0.2em] text-[10px]">Đang tải dữ liệu trực tuyến...</p>
+        <p className="font-black uppercase tracking-[0.2em] text-[10px]">Đang tải dữ liệu...</p>
       </div>
     );
   }
@@ -213,7 +206,7 @@ const App: React.FC = () => {
                 <div className="bg-red-600 text-white p-4 lg:p-6 rounded-[2rem] shadow-xl flex items-center gap-4 border-2 border-red-400">
                   <span className="text-3xl">⚠️</span>
                   <div className="flex-1">
-                    <h4 className="text-xs lg:text-sm font-black uppercase tracking-widest">THÔNG BÁO NGHỈ LỄ / TẠM DỪNG HOẠT ĐỘNG</h4>
+                    <h4 className="text-xs lg:text-sm font-black uppercase tracking-widest">THÔNG BÁO NGHỈ LỄ</h4>
                     <p className="text-sm lg:text-lg font-bold leading-tight mt-1">{headerConfig.holidayNotice}</p>
                   </div>
                 </div>
@@ -223,9 +216,9 @@ const App: React.FC = () => {
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
-                <p className="text-gray-500 text-sm mt-1 uppercase font-bold tracking-widest opacity-60">Fitness Department • {new Date().toLocaleDateString('vi-VN')}</p>
+                <p className="text-gray-500 text-sm mt-1 uppercase font-bold tracking-widest opacity-60">Fitness Department</p>
               </div>
-              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
+              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2">
                 <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
               </button>
@@ -250,18 +243,10 @@ const App: React.FC = () => {
         {showAdmin && (currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER') && (
           <div className="fixed inset-0 z-[100] animate-fade">
              <AdminPanel 
-              user={currentUser} 
-              headerConfig={headerConfig} 
-              onUpdateHeader={handleUpdateHeader} 
-              permissions={permissions}
-              onUpdatePermissions={(p) => { setPermissions(p); postToCloud('updatePermissions', p); }}
-              rootEmail={ROOT_ADMIN_EMAIL}
-              onClose={() => setShowAdmin(false)}
-              registeredUsers={userRegistry}
-              schedule={schedule}
-              onUpdateSchedule={handleUpdateSchedule}
-              onNotify={addNotification}
-              ratings={ratings}
+              user={currentUser} headerConfig={headerConfig} onUpdateHeader={handleUpdateHeader} 
+              permissions={permissions} onUpdatePermissions={(p) => { setPermissions(p); postToCloud('updatePermissions', p); }}
+              rootEmail={ROOT_ADMIN_EMAIL} onClose={() => setShowAdmin(false)} registeredUsers={userRegistry}
+              schedule={schedule} onUpdateSchedule={handleUpdateSchedule} onNotify={addNotification} ratings={ratings}
             />
           </div>
         )}
@@ -278,28 +263,13 @@ const App: React.FC = () => {
             </div>
             <div className="space-y-4">
               <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
-              <div className="space-y-2">
-                 <a href={`tel:${headerConfig.hotline}`} className="flex items-center justify-center md:justify-start gap-2 group">
-                   <div className="p-2 bg-teal-900 rounded-lg group-hover:bg-teal-500 transition-colors">
-                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
-                   </div>
-                   <span className="text-lg font-black tracking-tighter">{headerConfig.hotline}</span>
-                 </a>
-                 <a href={`https://${headerConfig.website}`} target="_blank" className="flex items-center justify-center md:justify-start gap-2 group">
-                   <div className="p-2 bg-teal-900 rounded-lg group-hover:bg-teal-500 transition-colors">
-                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 10-2 0v1a1 1 0 102 0zM13.657 15.657a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM16 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1z"/></svg>
-                   </div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-teal-300">{headerConfig.website}</span>
-                 </a>
+              <div className="space-y-2 text-sm font-bold">
+                <p>Hotline: {headerConfig.hotline}</p>
+                <p>Website: {headerConfig.website}</p>
               </div>
             </div>
-            <div className="flex flex-col justify-between">
+            <div>
               <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi FITNESS DEPARTMENT<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
-              <div className="flex gap-4 mt-6 justify-center md:justify-start">
-
-<span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50"><a href="https://www.facebook.com/CiputraClubHanoi target="_blank">F</a></span>
-
-              </div>
             </div>
           </div>
         </footer>
