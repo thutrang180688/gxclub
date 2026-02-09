@@ -257,8 +257,9 @@ const App: React.FC = () => {
 
         <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
-            <div>
-              <img src={headerConfig.logo} alt="Logo" className="h-10 mx-auto md:mx-0 brightness-0 invert opacity-80" />
+           <div>
+              {/* Loại bỏ brightness-0 invert để giữ màu gốc của logo */}
+              <img src={headerConfig.logo} alt="Logo" className="h-12 mx-auto md:mx-0 opacity-100 object-contain" />
               <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
             </div>
             <div className="space-y-4">
