@@ -13,11 +13,11 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
-const NEW_BRAND_LOGO = "/upload/logo.png";
+const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086559890_234d68a167_o.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
-  address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
+  address: 'Ciputra Club, Phú Thượng, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
   scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`,
@@ -276,7 +276,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
-                Phát triển bởi FITNESS DEPARTMENT<br/>
+                Phát triển bởi Bùi Thái Sơn<br/>
                 © 2026 CIPUTRA CLUB. All rights reserved.
               </p>
             </div>
