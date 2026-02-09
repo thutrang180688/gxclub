@@ -18,7 +18,7 @@ const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086442379_195b472e
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
-  address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
+  address: 'Ciputra Club, Phú Thượng, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
   scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`,
