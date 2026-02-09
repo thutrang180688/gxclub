@@ -24,7 +24,6 @@ const DEFAULT_HEADER: HeaderConfig = {
 };
 
 const App: React.FC = () => {
-  // Persistence: Khôi phục user từ localStorage ngay khi khởi tạo
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('gx_user_v7');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -41,6 +40,29 @@ const App: React.FC = () => {
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Logic phản ứng thời gian thực khi Admin thay đổi quyền
+  useEffect(() => {
+    if (currentUser) {
+      const lowerEmail = currentUser.email.toLowerCase();
+      let newRole: Role = 'USER';
+      const userPerm = permissions.find(p => p.email.toLowerCase() === lowerEmail);
+      
+      if (lowerEmail === ROOT_ADMIN_EMAIL) newRole = 'ADMIN';
+      else if (userPerm) newRole = userPerm.role;
+
+      if (newRole !== currentUser.role) {
+        const updatedUser = { ...currentUser, role: newRole };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('gx_user_v7', JSON.stringify(updatedUser));
+        
+        // Nếu bị hạ quyền về USER và đang mở Admin Panel thì đóng lại ngay
+        if (newRole === 'USER') {
+          setShowAdmin(false);
+        }
+      }
+    }
+  }, [permissions, currentUser?.email]);
 
   const syncFromCloud = async () => {
     if (!GAS_WEBAPP_URL) {
@@ -138,7 +160,6 @@ const App: React.FC = () => {
 
     const newUser: User = { id: btoa(lowerEmail), name, email: lowerEmail, role, avatar: photo };
     setCurrentUser(newUser);
-    // Lưu vào localStorage để duy trì phiên
     localStorage.setItem('gx_user_v7', JSON.stringify(newUser));
 
     if (!userRegistry.find(u => u.email === lowerEmail)) {
@@ -170,8 +191,6 @@ const App: React.FC = () => {
       <main className="flex-1 max-w-[1440px] mx-auto w-full px-0 sm:px-4 py-4 lg:py-8 pb-12">
         <div className="grid lg:grid-cols-12 gap-8 px-4 lg:px-0">
           <div className="lg:col-span-8 xl:col-span-9">
-            
-            {/* THÔNG BÁO NGHỈ LỄ (BANNER ĐỎ) */}
             {headerConfig.holidayNotice && (
               <div className="mb-6 animate-bounce">
                 <div className="bg-red-600 text-white p-4 lg:p-6 rounded-[2rem] shadow-xl flex items-center gap-4 border-2 border-red-400">

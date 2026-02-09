@@ -35,19 +35,27 @@ const AdminPanel: React.FC<Props> = ({
     status: 'NORMAL'
   });
 
+  const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
 
-  const toggleUserRole = (email: string, currentRole: Role) => {
+  // Hàm cập nhật quyền mới hỗ trợ set Admin cho Root Admin
+  const handleUpdateUserRole = (email: string, targetRole: Role) => {
     if (!isAdmin) return;
     if (email.toLowerCase() === rootEmail.toLowerCase()) return;
-    const newRole: Role = currentRole === 'MANAGER' ? 'USER' : 'MANAGER';
     
     let updatedPerms;
-    const existingIdx = permissions.findIndex(p => p.email === email);
-    if (existingIdx > -1) {
-      updatedPerms = permissions.map((p, i) => i === existingIdx ? { ...p, role: newRole } : p);
+    const existingIdx = permissions.findIndex(p => p.email.toLowerCase() === email.toLowerCase());
+    
+    if (targetRole === 'USER') {
+      // Hủy quyền: Xóa khỏi mảng permissions
+      updatedPerms = permissions.filter(p => p.email.toLowerCase() !== email.toLowerCase());
     } else {
-      updatedPerms = [...permissions, { email, role: newRole, addedAt: new Date().toISOString() }];
+      // Cấp hoặc đổi quyền
+      if (existingIdx > -1) {
+        updatedPerms = permissions.map((p, i) => i === existingIdx ? { ...p, role: targetRole } : p);
+      } else {
+        updatedPerms = [...permissions, { email: email.toLowerCase(), role: targetRole, addedAt: new Date().toISOString() }];
+      }
     }
     onUpdatePermissions(updatedPerms);
   };
@@ -108,7 +116,6 @@ const AdminPanel: React.FC<Props> = ({
           
           {activeTab === 'SCHEDULE' && (
              <div className="space-y-12 animate-fade">
-                {/* GỬI THÔNG BÁO CHO HỘI VIÊN */}
                 <section className="bg-amber-50 rounded-[2.5rem] p-8 border border-amber-200 shadow-sm">
                    <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                      <span>📢</span> Gửi thông báo khẩn (Hội viên sẽ nhận được ngay)
@@ -185,8 +192,6 @@ const AdminPanel: React.FC<Props> = ({
               <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200">
                 <h3 className="text-lg font-black text-teal-900 uppercase mb-6">⚙️ Cấu hình website</h3>
                 <div className="space-y-4">
-                  
-                  {/* Ô THÔNG BÁO NGHỈ LỄ */}
                   <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
                     <label className="text-[9px] font-black text-red-600 uppercase ml-2 tracking-widest">Thông báo nghỉ lễ (Màu đỏ trên trang chủ)</label>
                     <input 
@@ -195,16 +200,10 @@ const AdminPanel: React.FC<Props> = ({
                       onChange={e => setTempHeader({...tempHeader, holidayNotice: e.target.value})} 
                       placeholder="VD: Nghỉ Tết Nguyên Đán từ 28/1 đến 05/2..."
                     />
-                    <p className="text-[7px] text-red-400 font-bold uppercase mt-2 italic">* Để trống nếu không có thông báo nghỉ lễ</p>
                   </div>
-
                   <div>
                     <label className="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Tiêu đề lịch tập</label>
                     <input className="w-full bg-white border rounded-2xl p-4 text-xs font-black" value={tempHeader.scheduleTitle} onChange={e => setTempHeader({...tempHeader, scheduleTitle: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Link Logo (URL)</label>
-                    <input className="w-full bg-white border rounded-2xl p-4 text-[10px] font-bold" value={tempHeader.logo} onChange={e => setTempHeader({...tempHeader, logo: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -232,8 +231,9 @@ const AdminPanel: React.FC<Props> = ({
               <div className="grid gap-4">
                 {registeredUsers.map(regUser => {
                   const currentPerm = permissions.find(p => p.email.toLowerCase() === regUser.email.toLowerCase());
-                  const role = currentPerm?.role || (regUser.email === rootEmail ? 'ADMIN' : 'USER');
+                  const role = currentPerm?.role || (regUser.email.toLowerCase() === rootEmail.toLowerCase() ? 'ADMIN' : 'USER');
                   const isRoot = regUser.email.toLowerCase() === rootEmail.toLowerCase();
+                  
                   return (
                     <div key={regUser.id} className="flex items-center justify-between bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
                       <div className="flex items-center gap-4">
@@ -243,13 +243,31 @@ const AdminPanel: React.FC<Props> = ({
                           <p className="text-[9px] text-gray-400 font-bold">{regUser.email}</p>
                         </div>
                       </div>
+                      
                       {!isRoot && (
-                        <button 
-                          onClick={() => toggleUserRole(regUser.email, role)} 
-                          className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${role === 'MANAGER' ? 'bg-red-50 text-red-600' : 'bg-teal-600 text-white'}`}
-                        >
-                          {role === 'MANAGER' ? 'Hủy Quyền' : 'Sét Manager'}
-                        </button>
+                        <div className="flex gap-2">
+                           {/* Nút Set Admin: Chỉ Root Admin mới có thể thực hiện */}
+                           {isRootAdmin && (
+                             <button 
+                               onClick={() => handleUpdateUserRole(regUser.email, role === 'ADMIN' ? 'USER' : 'ADMIN')} 
+                               className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'ADMIN' ? 'bg-black text-white' : 'bg-amber-500 text-white shadow-lg shadow-amber-200'}`}
+                             >
+                               {role === 'ADMIN' ? 'Hạ quyền Admin' : 'Cấp quyền Admin'}
+                             </button>
+                           )}
+
+                           {/* Nút Set Manager */}
+                           <button 
+                            onClick={() => handleUpdateUserRole(regUser.email, role === 'MANAGER' ? 'USER' : 'MANAGER')} 
+                            className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'MANAGER' ? 'bg-red-50 text-red-600' : 'bg-teal-600 text-white'}`}
+                           >
+                            {role === 'MANAGER' ? 'Hủy Manager' : 'Cấp Manager'}
+                           </button>
+                        </div>
+                      )}
+                      
+                      {isRoot && (
+                        <span className="bg-teal-100 text-teal-800 px-4 py-2 rounded-xl text-[8px] font-black uppercase">Root Admin</span>
                       )}
                     </div>
                   );
@@ -262,18 +280,35 @@ const AdminPanel: React.FC<Props> = ({
              <div className="space-y-6 animate-fade">
                <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Phản hồi Hội viên</h3>
                <div className="grid gap-4">
-                  {ratings.map(r => (
-                    <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="text-[11px] font-black text-teal-900 uppercase">{r.userName}</p>
-                          <p className="text-[8px] text-gray-400 font-bold">{new Date(r.timestamp).toLocaleString('vi-VN')}</p>
+                  {ratings.length === 0 ? (
+                    <p className="text-center py-12 text-gray-400 font-bold uppercase text-xs">Chưa có đánh giá nào</p>
+                  ) : (
+                    ratings.map(r => {
+                      const sessionInfo = schedule.find(s => s.id === r.classId);
+                      return (
+                        <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                          {/* Hiển thị thông tin lớp học ở góc */}
+                          <div className="absolute top-0 right-0 px-4 py-2 bg-teal-900 text-white rounded-bl-2xl">
+                             <p className="text-[8px] font-black uppercase tracking-widest">
+                               Lớp: {sessionInfo?.className || 'Lớp đã xóa'}
+                             </p>
+                             <p className="text-[7px] opacity-70 font-bold uppercase">
+                               HLV: {sessionInfo?.instructor || '---'}
+                             </p>
+                          </div>
+
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <p className="text-[11px] font-black text-teal-900 uppercase">{r.userName}</p>
+                              <p className="text-[8px] text-gray-400 font-bold">{new Date(r.timestamp).toLocaleString('vi-VN')}</p>
+                            </div>
+                            <div className="text-amber-400 text-xs mt-8">{'★'.repeat(r.stars)}</div>
+                          </div>
+                          <p className="text-xs font-bold text-gray-700 bg-slate-50 p-4 rounded-2xl italic">"{r.comment}"</p>
                         </div>
-                        <div className="text-amber-400 text-xs">{'★'.repeat(r.stars)}</div>
-                      </div>
-                      <p className="text-xs font-bold text-gray-700 bg-slate-50 p-4 rounded-2xl italic">"{r.comment}"</p>
-                    </div>
-                  ))}
+                      );
+                    })
+                  )}
                </div>
              </div>
           )}
