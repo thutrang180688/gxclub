@@ -277,7 +277,7 @@ const App: React.FC = () => {
               <div className="flex gap-4 mt-6 justify-center md:justify-start">
                 
 
-<span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">f</span>
+<span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50"><a href="https://www.facebook.com/CiputraClubHanoi">F</a></span>
              
               </div>
             </div>
