@@ -229,49 +229,51 @@ const AdminPanel: React.FC<Props> = ({
             <div className="space-y-8 animate-fade">
               <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Quản lý Phân quyền</h3>
               <div className="grid gap-4">
-                {registeredUsers.map(regUser => {
-                  const currentPerm = permissions.find(p => p.email.toLowerCase() === regUser.email.toLowerCase());
-                  const role = currentPerm?.role || (regUser.email.toLowerCase() === rootEmail.toLowerCase() ? 'ADMIN' : 'USER');
-                  const isRoot = regUser.email.toLowerCase() === rootEmail.toLowerCase();
-                  
-                  return (
-                    <div key={regUser.id} className="flex items-center justify-between bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <img src={regUser.avatar} className="w-10 h-10 rounded-full border-2 border-teal-500 p-0.5" alt="avt" />
-                        <div>
-                          <p className="text-[11px] font-black text-gray-800 uppercase">{regUser.name}</p>
-                          <p className="text-[9px] text-gray-400 font-bold">{regUser.email}</p>
+                {registeredUsers
+                  .filter(regUser => isRootAdmin || regUser.email.toLowerCase() !== rootEmail.toLowerCase())
+                  .map(regUser => {
+                    const currentPerm = permissions.find(p => p.email.toLowerCase() === regUser.email.toLowerCase());
+                    const role = currentPerm?.role || (regUser.email.toLowerCase() === rootEmail.toLowerCase() ? 'ADMIN' : 'USER');
+                    const isRoot = regUser.email.toLowerCase() === rootEmail.toLowerCase();
+                    
+                    return (
+                      <div key={regUser.id} className="flex items-center justify-between bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-4">
+                          <img src={regUser.avatar} className="w-10 h-10 rounded-full border-2 border-teal-500 p-0.5" alt="avt" />
+                          <div>
+                            <p className="text-[11px] font-black text-gray-800 uppercase">{regUser.name}</p>
+                            <p className="text-[9px] text-gray-400 font-bold">{regUser.email}</p>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {!isRoot && (
-                        <div className="flex gap-2">
-                           {/* Nút Set Admin: Chỉ Root Admin mới có thể thực hiện */}
-                           {isRootAdmin && (
-                             <button 
-                               onClick={() => handleUpdateUserRole(regUser.email, role === 'ADMIN' ? 'USER' : 'ADMIN')} 
-                               className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'ADMIN' ? 'bg-black text-white' : 'bg-amber-500 text-white shadow-lg shadow-amber-200'}`}
-                             >
-                               {role === 'ADMIN' ? 'Hạ quyền Admin' : 'Cấp quyền Admin'}
-                             </button>
-                           )}
+                        
+                        {!isRoot && (
+                          <div className="flex gap-2">
+                             {/* Nút Set Admin: Chỉ Root Admin mới có thể thực hiện */}
+                             {isRootAdmin && (
+                               <button 
+                                 onClick={() => handleUpdateUserRole(regUser.email, role === 'ADMIN' ? 'USER' : 'ADMIN')} 
+                                 className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'ADMIN' ? 'bg-black text-white' : 'bg-amber-500 text-white shadow-lg shadow-amber-200'}`}
+                               >
+                                 {role === 'ADMIN' ? 'Hạ quyền Admin' : 'Cấp quyền Admin'}
+                               </button>
+                             )}
 
-                           {/* Nút Set Manager */}
-                           <button 
-                            onClick={() => handleUpdateUserRole(regUser.email, role === 'MANAGER' ? 'USER' : 'MANAGER')} 
-                            className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'MANAGER' ? 'bg-red-50 text-red-600' : 'bg-teal-600 text-white'}`}
-                           >
-                            {role === 'MANAGER' ? 'Hủy Manager' : 'Cấp Manager'}
-                           </button>
-                        </div>
-                      )}
-                      
-                      {isRoot && (
-                        <span className="bg-teal-100 text-teal-800 px-4 py-2 rounded-xl text-[8px] font-black uppercase">Root Admin</span>
-                      )}
-                    </div>
-                  );
-                })}
+                             {/* Nút Set Manager */}
+                             <button 
+                              onClick={() => handleUpdateUserRole(regUser.email, role === 'MANAGER' ? 'USER' : 'MANAGER')} 
+                              className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${role === 'MANAGER' ? 'bg-red-50 text-red-600' : 'bg-teal-600 text-white'}`}
+                             >
+                              {role === 'MANAGER' ? 'Hủy Manager' : 'Cấp Manager'}
+                             </button>
+                          </div>
+                        )}
+                        
+                        {isRoot && (
+                          <span className="bg-teal-100 text-teal-800 px-4 py-2 rounded-xl text-[8px] font-black uppercase">Root Admin</span>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
