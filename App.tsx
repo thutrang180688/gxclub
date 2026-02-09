@@ -13,7 +13,7 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
-const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086442379_195b472edc_o.png";
+const NEW_BRAND_LOGO = "http://ciputraclub.vn/wp-content/uploads/2026/02/logoW-1.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
