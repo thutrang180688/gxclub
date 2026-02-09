@@ -16,19 +16,19 @@ declare global {
   }
 }
 
-// @ts-ignore: import.meta.env handles environmental variables
+// @ts-ignore: environmental variables
 const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onToggleAdmin }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [logoUrl, setLogoUrl] = useState(config.logo);
   const [isGsiLoaded, setIsGsiLoaded] = useState(false);
+  const currentOrigin = window.location.origin;
 
   useEffect(() => {
     setLogoUrl(config.logo);
   }, [config.logo]);
 
-  // Kiểm tra script Google đã sẵn sàng chưa
   useEffect(() => {
     const checkGsi = setInterval(() => {
       if (window.google?.accounts?.id) {
@@ -52,7 +52,7 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
           onGoogleLogin(payload.email, payload.name, payload.picture);
           setShowLoginModal(false);
         } catch (e) {
-          console.error("Lỗi xác thực Google:", e);
+          console.error("Lỗi xác thực:", e);
         }
       };
 
@@ -77,7 +77,7 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
         }, 300);
         return () => clearTimeout(renderTimeout);
       } catch (err) {
-        console.error("Google Auth Init Error:", err);
+        console.error("GSI Init Error:", err);
       }
     }
   }, [showLoginModal, user, isGsiLoaded]);
@@ -157,18 +157,13 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
               <div id="googleBtn" className="min-h-[40px] w-full flex justify-center">
                 {!GOOGLE_CLIENT_ID && (
                   <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-200 w-full">
-                    <p className="text-[10px] font-black text-red-700 uppercase leading-relaxed">
-                      LỖI: THIẾU GOOGLE CLIENT ID
-                    </p>
-                    <p className="text-[8px] text-red-500 mt-2 font-bold leading-normal">
-                      Vui lòng thêm biến <span className="underline italic">VITE_GOOGLE_CLIENT_ID</span> vào Vercel với giá trị là mã Client ID lấy từ Google Cloud.
-                    </p>
+                    <p className="text-[10px] font-black text-red-700 uppercase">LỖI: THIẾU CLIENT ID</p>
                   </div>
                 )}
                 {GOOGLE_CLIENT_ID && !isGsiLoaded && (
                   <div className="flex items-center gap-2 text-[10px] font-black text-teal-600 animate-pulse">
                     <div className="w-3 h-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                    ĐANG KẾT NỐI GOOGLE...
+                    ĐANG KẾT NỐI...
                   </div>
                 )}
               </div>
@@ -196,8 +191,20 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
               </button>
             </div>
             
-            <div className="mt-6 pt-4 border-t border-gray-100 text-[8px] text-gray-400 text-center font-bold uppercase italic leading-tight">
-               Lưu ý: Nếu nút đăng nhập Google không hiện, hãy kiểm tra mục "Authorized JavaScript origins" trong Google Cloud.
+            {/* PHẦN CHẨN ĐOÁN LỖI DÀNH CHO BẠN */}
+            <div className="mt-6 pt-4 border-t border-dashed border-gray-100 space-y-3">
+               <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                  <p className="text-[8px] text-amber-700 font-black uppercase mb-1">🛠️ Khắc phục lỗi 400 origin_mismatch:</p>
+                  <p className="text-[7px] text-amber-600 font-bold leading-tight">
+                    Copy chính xác link dưới đây dán vào mục <b>Authorized JavaScript origins</b> trên Google Cloud Console:
+                  </p>
+                  <div className="mt-2 p-2 bg-white rounded border border-amber-200 font-mono text-[9px] text-teal-800 break-all select-all cursor-pointer" title="Nhấn để chọn tất cả">
+                    {currentOrigin}
+                  </div>
+               </div>
+               <p className="text-[7px] text-gray-400 text-center font-bold uppercase italic">
+                  Lưu ý: Sau khi lưu trên Google Cloud, hãy chờ 5 phút để cập nhật.
+               </p>
             </div>
           </div>
         </div>
