@@ -13,8 +13,7 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
-// ĐƯỜNG DẪN LOGO CHÍNH (Thay đổi tại đây)
-const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086559890_234d68a167_o.png";
+const NEW_BRAND_LOGO = "/upload/logo.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
@@ -257,8 +256,15 @@ const App: React.FC = () => {
         <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
             <div>
-              {/* Loại bỏ brightness-0 invert để giữ màu gốc của logo */}
-              <img src={headerConfig.logo} alt="Logo" className="h-12 mx-auto md:mx-0 opacity-100 object-contain" />
+              <div className="inline-block bg-transparent border-none outline-none overflow-hidden">
+                <img 
+                  src={headerConfig.logo} 
+                  alt="Ciputra Logo Footer" 
+                  className="h-12 w-auto mx-auto md:mx-0 block object-contain border-none shadow-none" 
+                  style={{ filter: 'none', mixBlendMode: 'normal' }}
+                  loading="eager"
+                />
+              </div>
               <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
             </div>
             <div className="space-y-4">
@@ -270,7 +276,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
-                Phát triển bởi Bùi Thái Sơn<br/>
+                Phát triển bởi FITNESS DEPARTMENT<br/>
                 © 2026 CIPUTRA CLUB. All rights reserved.
               </p>
             </div>
