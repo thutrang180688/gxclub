@@ -21,12 +21,7 @@ const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onToggleAdmin }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [logoUrl, setLogoUrl] = useState(config.logo);
   const [isGsiLoaded, setIsGsiLoaded] = useState(false);
-
-  useEffect(() => {
-    setLogoUrl(config.logo);
-  }, [config.logo]);
 
   useEffect(() => {
     const checkGsi = setInterval(() => {
@@ -88,12 +83,10 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
           <div className="flex items-center gap-3">
             <div className="p-1 flex items-center justify-center min-w-[40px]">
               <img 
-                src={logoUrl} 
+                src={config.logo} 
                 alt="Logo" 
                 className="h-10 lg:h-14 w-auto object-contain transition-all duration-500"
-                onError={() => {
-                  setLogoUrl("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M10,80 L40,60 Q60,45 85,50 T60,85 Q30,85 25,65 Q25,40 50,25 T90,20 Q60,15 35,40 T30,75' fill='none' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E");
-                }}
+                // Xóa onError ở đây để tránh bị ghi đè bởi logo mặc định
               />
             </div>
             <div className="hidden sm:block border-l border-teal-700/50 pl-3">

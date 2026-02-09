@@ -12,8 +12,9 @@ import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
-// Đường dẫn logo thực tế bạn đã tạo
-const NEW_BRAND_LOGO = "/upload/logot.png";
+
+// ĐƯỜNG DẪN LOGO CHÍNH (Dòng 16)
+const NEW_BRAND_LOGO = "/upload/logo.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
@@ -60,6 +61,9 @@ const App: React.FC = () => {
     }
   }, [permissions, currentUser?.email]);
 
+  // Hàm kiểm tra xem logo có phải là logo mặc định (SVG) không
+  const isDefaultLogo = (url: string) => !url || url.startsWith('data:image/svg+xml');
+
   const syncFromCloud = async () => {
     if (!GAS_WEBAPP_URL) {
       loadFromLocalStorage();
@@ -70,8 +74,18 @@ const App: React.FC = () => {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       if (data.schedule) setSchedule(data.schedule);
-      if (data.header) setHeaderConfig(data.header);
-      else setHeaderConfig(DEFAULT_HEADER);
+      
+      if (data.header) {
+        // Ưu tiên NEW_BRAND_LOGO nếu logo từ cloud là logo mặc định
+        const finalLogo = isDefaultLogo(data.header.logo) ? NEW_BRAND_LOGO : data.header.logo;
+        setHeaderConfig({
+          ...data.header,
+          logo: finalLogo
+        });
+      } else {
+        setHeaderConfig(DEFAULT_HEADER);
+      }
+      
       if (data.users) setUserRegistry(data.users);
       if (data.notifications) setNotifications(data.notifications);
       if (data.permissions) setPermissions(data.permissions);
@@ -90,7 +104,14 @@ const App: React.FC = () => {
     const sP = localStorage.getItem('gx_permissions_v7');
     const sR = localStorage.getItem('gx_ratings_v7');
     if (sS) setSchedule(JSON.parse(sS));
-    if (sH) setHeaderConfig(JSON.parse(sH));
+    if (sH) {
+      const localHeader = JSON.parse(sH);
+      // Ưu tiên NEW_BRAND_LOGO nếu logo lưu trong máy là logo mặc định
+      const finalLogo = isDefaultLogo(localHeader.logo) ? NEW_BRAND_LOGO : localHeader.logo;
+      setHeaderConfig({ ...localHeader, logo: finalLogo });
+    } else {
+      setHeaderConfig(DEFAULT_HEADER);
+    }
     if (sP) setPermissions(JSON.parse(sP));
     if (sR) setRatings(JSON.parse(sR));
   };
@@ -273,12 +294,11 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-col justify-between">
-              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi Bùi Thái Sơn<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
+              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi FITNESS DEPARTMENT<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
               <div className="flex gap-4 mt-6 justify-center md:justify-start">
-                
 
 <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50"><a href="https://www.facebook.com/CiputraClubHanoi target="_blank">F</a></span>
-             
+
               </div>
             </div>
           </div>
