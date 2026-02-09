@@ -15,11 +15,17 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-teal-950/60 backdrop-blur-lg p-4">
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade p-8">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade p-8 max-h-[90vh] overflow-y-auto">
         <h3 className="text-2xl font-black uppercase text-teal-900 mb-6 flex items-center gap-3">
           <span>📝</span> Sửa Lớp Học
         </h3>
         <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ (Dời lớp)</label>
+            <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
+              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({d.eng})</option>)}
+            </select>
+          </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Giờ Học</label>
             <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
@@ -27,6 +33,10 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Tên Lớp</label>
             <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none uppercase" value={form.className} onChange={e => setForm({...form, className: e.target.value.toUpperCase()})} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">HLV</label>
+            <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none uppercase" value={form.instructor} onChange={e => setForm({...form, instructor: e.target.value.toUpperCase()})} />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Trạng Thái / Thông Báo Lớp</label>

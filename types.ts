@@ -52,6 +52,7 @@ export interface HeaderConfig {
   hotline: string;
   website: string;
   scheduleTitle: string;
+  holidayNotice: string; // Thêm thông báo nghỉ lễ
 }
 
 export const DAYS_OF_WEEK = [
@@ -64,10 +65,9 @@ export const DAYS_OF_WEEK = [
   { vn: 'Chủ Nhật', eng: 'Sunday' },
 ];
 
-// Định nghĩa màu sắc theo yêu cầu: Xanh Lá, Xanh Dương, Vàng cam, Tím
 export const CATEGORY_COLORS = {
-  YOGA: 'bg-sky-500',      // Xanh Dương
-  TAICHI: 'bg-emerald-600', // Xanh Lá
-  DANCE: 'bg-orange-500',   // Vàng Cam
-  OTHER: 'bg-indigo-500'    // Tím
+  YOGA: 'bg-sky-500',
+  TAICHI: 'bg-emerald-600',
+  DANCE: 'bg-orange-500',
+  OTHER: 'bg-indigo-500'
 };

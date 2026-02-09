@@ -11,16 +11,7 @@ import NotificationList from './components/NotificationList';
 import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
-
-// Sử dụng biến môi trường từ Vercel/Vite
-// @ts-ignore: import.meta.env may not be recognized by standard TypeScript without Vite types
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
-
-/**
- * LOGO SVG MÔ PHỎNG CHÍNH XÁC HÌNH ẢNH CỦA BẠN:
- * - Dùng Path phức tạp để tạo đường nét vuốt nhọn ở đuôi.
- * - Tạo độ nghiêng và uốn lượn như dải lụa.
- */
 const NEW_BRAND_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Cpath d='M50,320 L250,220 Q350,170 480,200 T350,350 Q200,350 180,260 Q180,160 300,100 T520,80 Q350,60 220,160 T180,300' fill='none' stroke='%23134e4a' stroke-width='35' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
 
 const DEFAULT_HEADER: HeaderConfig = {
@@ -28,11 +19,17 @@ const DEFAULT_HEADER: HeaderConfig = {
   address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
-  scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`
+  scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`,
+  holidayNotice: ''
 };
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Persistence: Khôi phục user từ localStorage ngay khi khởi tạo
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('gx_user_v7');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  
   const [schedule, setSchedule] = useState<ClassSession[]>([]);
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
   const [permissions, setPermissions] = useState<PermissionRecord[]>([]);
@@ -141,12 +138,20 @@ const App: React.FC = () => {
 
     const newUser: User = { id: btoa(lowerEmail), name, email: lowerEmail, role, avatar: photo };
     setCurrentUser(newUser);
+    // Lưu vào localStorage để duy trì phiên
+    localStorage.setItem('gx_user_v7', JSON.stringify(newUser));
 
     if (!userRegistry.find(u => u.email === lowerEmail)) {
       const updatedRegistry = [...userRegistry, newUser];
       setUserRegistry(updatedRegistry);
       postToCloud('loginUser', newUser);
     }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setShowAdmin(false);
+    localStorage.removeItem('gx_user_v7');
   };
 
   if (isLoading) {
@@ -160,11 +165,25 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Header config={headerConfig} user={currentUser} onGoogleLogin={handleGoogleLogin} onLogout={() => { setCurrentUser(null); setShowAdmin(false); }} onToggleAdmin={() => setShowAdmin(!showAdmin)} />
+      <Header config={headerConfig} user={currentUser} onGoogleLogin={handleGoogleLogin} onLogout={handleLogout} onToggleAdmin={() => setShowAdmin(!showAdmin)} />
       
       <main className="flex-1 max-w-[1440px] mx-auto w-full px-0 sm:px-4 py-4 lg:py-8 pb-12">
         <div className="grid lg:grid-cols-12 gap-8 px-4 lg:px-0">
           <div className="lg:col-span-8 xl:col-span-9">
+            
+            {/* THÔNG BÁO NGHỈ LỄ (BANNER ĐỎ) */}
+            {headerConfig.holidayNotice && (
+              <div className="mb-6 animate-bounce">
+                <div className="bg-red-600 text-white p-4 lg:p-6 rounded-[2rem] shadow-xl flex items-center gap-4 border-2 border-red-400">
+                  <span className="text-3xl">⚠️</span>
+                  <div className="flex-1">
+                    <h4 className="text-xs lg:text-sm font-black uppercase tracking-widest">THÔNG BÁO NGHỈ LỄ / TẠM DỪNG HOẠT ĐỘNG</h4>
+                    <p className="text-sm lg:text-lg font-bold leading-tight mt-1">{headerConfig.holidayNotice}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
