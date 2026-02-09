@@ -1,0 +1,256 @@
+
+import React, { useState, useEffect } from 'react';
+import { Role, User, ClassSession, HeaderConfig, PermissionRecord, AppNotification, Rating } from './types';
+import Header from './components/Header';
+import ScheduleGrid from './components/ScheduleGrid';
+import ScheduleList from './components/ScheduleList';
+import DateStrip from './components/DateStrip';
+import AdminPanel from './components/AdminPanel';
+import PWAInstaller from './components/PWAInstaller';
+import NotificationList from './components/NotificationList';
+import RatingModal from './components/RatingModal';
+
+const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
+
+// Sử dụng biến môi trường từ Vercel/Vite
+// @ts-ignore: import.meta.env may not be recognized by standard TypeScript without Vite types
+const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
+
+/**
+ * LOGO SVG MÔ PHỎNG CHÍNH XÁC HÌNH ẢNH CỦA BẠN:
+ * - Dùng Path phức tạp để tạo đường nét vuốt nhọn ở đuôi.
+ * - Tạo độ nghiêng và uốn lượn như dải lụa.
+ */
+const NEW_BRAND_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 400'%3E%3Cpath d='M50,320 L250,220 Q350,170 480,200 T350,350 Q200,350 180,260 Q180,160 300,100 T520,80 Q350,60 220,160 T180,300' fill='none' stroke='%23134e4a' stroke-width='35' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+
+const DEFAULT_HEADER: HeaderConfig = {
+  logo: NEW_BRAND_LOGO,
+  address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
+  hotline: '0243 743 0666',
+  website: 'www.ciputraclub.vn',
+  scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`
+};
+
+const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [schedule, setSchedule] = useState<ClassSession[]>([]);
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
+  const [permissions, setPermissions] = useState<PermissionRecord[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState<ClassSession | null>(null);
+  const [userRegistry, setUserRegistry] = useState<User[]>([]);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const syncFromCloud = async () => {
+    if (!GAS_WEBAPP_URL) {
+      loadFromLocalStorage();
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
+      const data = await response.json();
+      if (data.schedule) setSchedule(data.schedule);
+      if (data.header) setHeaderConfig(data.header);
+      else setHeaderConfig(DEFAULT_HEADER);
+      if (data.users) setUserRegistry(data.users);
+      if (data.notifications) setNotifications(data.notifications);
+      if (data.permissions) setPermissions(data.permissions);
+      if (data.ratings) setRatings(data.ratings);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Lỗi Cloud:", error);
+      loadFromLocalStorage();
+      setIsLoading(false);
+    }
+  };
+
+  const loadFromLocalStorage = () => {
+    const sS = localStorage.getItem('gx_schedule_v7');
+    const sH = localStorage.getItem('gx_header_v7');
+    const sP = localStorage.getItem('gx_permissions_v7');
+    const sR = localStorage.getItem('gx_ratings_v7');
+    if (sS) setSchedule(JSON.parse(sS));
+    if (sH) setHeaderConfig(JSON.parse(sH));
+    if (sP) setPermissions(JSON.parse(sP));
+    if (sR) setRatings(JSON.parse(sR));
+  };
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    syncFromCloud();
+    const interval = setInterval(syncFromCloud, 120000);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const postToCloud = async (action: string, payload: any) => {
+    if (!GAS_WEBAPP_URL) return;
+    try {
+      await fetch(GAS_WEBAPP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, data: payload })
+      });
+    } catch (e) {
+      console.warn("Post sync warning:", e);
+    }
+  };
+
+  const handleUpdateSchedule = (newSchedule: ClassSession[]) => {
+    setSchedule(newSchedule);
+    localStorage.setItem('gx_schedule_v7', JSON.stringify(newSchedule));
+    postToCloud('updateSchedule', newSchedule);
+  };
+
+  const handleUpdateHeader = (newHeader: HeaderConfig) => {
+    setHeaderConfig(newHeader);
+    localStorage.setItem('gx_header_v7', JSON.stringify(newHeader));
+    postToCloud('updateHeader', newHeader);
+  };
+
+  const handleAddRating = (r: Rating) => {
+    const updated = [r, ...ratings];
+    setRatings(updated);
+    localStorage.setItem('gx_ratings_v7', JSON.stringify(updated));
+    postToCloud('addRating', r);
+    setRatingTarget(null);
+  };
+
+  const addNotification = (message: string, type: 'INFO' | 'ALERT' = 'INFO') => {
+    const newNotif: AppNotification = { id: Date.now().toString(), message, timestamp: new Date().toISOString(), type, sender: currentUser?.name || 'Hệ thống' };
+    const updated = [newNotif, ...notifications].slice(0, 20);
+    setNotifications(updated);
+    postToCloud('addNotification', newNotif);
+  };
+
+  const handleGoogleLogin = (email: string, name: string, photo: string) => {
+    const lowerEmail = email.toLowerCase();
+    let role: Role = 'USER';
+    const userPerm = permissions.find(p => p.email.toLowerCase() === lowerEmail);
+    if (lowerEmail === ROOT_ADMIN_EMAIL) role = 'ADMIN';
+    else if (userPerm) role = userPerm.role;
+
+    const newUser: User = { id: btoa(lowerEmail), name, email: lowerEmail, role, avatar: photo };
+    setCurrentUser(newUser);
+
+    if (!userRegistry.find(u => u.email === lowerEmail)) {
+      const updatedRegistry = [...userRegistry, newUser];
+      setUserRegistry(updatedRegistry);
+      postToCloud('loginUser', newUser);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-teal-900 flex flex-col items-center justify-center text-white p-4">
+        <div className="w-16 h-16 border-4 border-teal-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-black uppercase tracking-[0.2em] text-[10px]">Đang tải dữ liệu trực tuyến...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Header config={headerConfig} user={currentUser} onGoogleLogin={handleGoogleLogin} onLogout={() => { setCurrentUser(null); setShowAdmin(false); }} onToggleAdmin={() => setShowAdmin(!showAdmin)} />
+      
+      <main className="flex-1 max-w-[1440px] mx-auto w-full px-0 sm:px-4 py-4 lg:py-8 pb-12">
+        <div className="grid lg:grid-cols-12 gap-8 px-4 lg:px-0">
+          <div className="lg:col-span-8 xl:col-span-9">
+            <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
+                <p className="text-gray-500 text-sm mt-1 uppercase font-bold tracking-widest opacity-60">Fitness Department • {new Date().toLocaleDateString('vi-VN')}</p>
+              </div>
+              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
+                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
+              </button>
+            </div>
+
+            {isMobile ? (
+              <div className="flex flex-col gap-4">
+                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} />
+                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} />
+              </div>
+            ) : (
+              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} />
+            )}
+          </div>
+
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
+            <NotificationList notifications={notifications} />
+            {isMobile && !showAdmin && <PWAInstaller />}
+          </aside>
+        </div>
+
+        {showAdmin && (currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER') && (
+          <div className="fixed inset-0 z-[100] animate-fade">
+             <AdminPanel 
+              user={currentUser} 
+              headerConfig={headerConfig} 
+              onUpdateHeader={handleUpdateHeader} 
+              permissions={permissions}
+              onUpdatePermissions={(p) => { setPermissions(p); postToCloud('updatePermissions', p); }}
+              rootEmail={ROOT_ADMIN_EMAIL}
+              onClose={() => setShowAdmin(false)}
+              registeredUsers={userRegistry}
+              schedule={schedule}
+              onUpdateSchedule={handleUpdateSchedule}
+              onNotify={addNotification}
+              ratings={ratings}
+            />
+          </div>
+        )}
+
+        {ratingTarget && currentUser && (
+          <RatingModal session={ratingTarget} user={currentUser} onClose={() => setRatingTarget(null)} onSave={handleAddRating} />
+        )}
+
+        <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
+          <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
+            <div>
+              <img src={headerConfig.logo} alt="Logo" className="h-10 mx-auto md:mx-0 brightness-0 invert opacity-80" />
+              <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
+            </div>
+            <div className="space-y-4">
+              <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
+              <div className="space-y-2">
+                 <a href={`tel:${headerConfig.hotline}`} className="flex items-center justify-center md:justify-start gap-2 group">
+                   <div className="p-2 bg-teal-900 rounded-lg group-hover:bg-teal-500 transition-colors">
+                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
+                   </div>
+                   <span className="text-lg font-black tracking-tighter">{headerConfig.hotline}</span>
+                 </a>
+                 <a href={`https://${headerConfig.website}`} target="_blank" className="flex items-center justify-center md:justify-start gap-2 group">
+                   <div className="p-2 bg-teal-900 rounded-lg group-hover:bg-teal-500 transition-colors">
+                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 10-2 0v1a1 1 0 102 0zM13.657 15.657a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM16 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1z"/></svg>
+                   </div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-teal-300">{headerConfig.website}</span>
+                 </a>
+              </div>
+            </div>
+            <div className="flex flex-col justify-between">
+              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi FITNESS DEPARTMENT<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
+              <div className="flex gap-4 mt-6 justify-center md:justify-start">
+                <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">f</span>
+                <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">ig</span>
+                <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">yt</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  );
+};
+
+export default App;
