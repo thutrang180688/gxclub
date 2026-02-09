@@ -13,7 +13,7 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 // Đường dẫn logo thực tế bạn đã tạo
-const NEW_BRAND_LOGO = "/upload/logo.png";
+const NEW_BRAND_LOGO = "/upload/logot.png";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
@@ -273,11 +273,10 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-col justify-between">
-              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi FITNESS DEPARTMENT<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
+              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi Bùi Thái Sơn<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
               <div className="flex gap-4 mt-6 justify-center md:justify-start">
                 <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">f</span>
-                <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">ig</span>
-                <span className="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-xs opacity-50">yt</span>
+             
               </div>
             </div>
           </div>
