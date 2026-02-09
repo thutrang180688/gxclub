@@ -18,7 +18,7 @@ const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086559890_234d68a1
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
-  address: 'Ciputra Club, Phú Thượng, Hà Nội',
+  address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
   scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`,
@@ -43,7 +43,6 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hàm kiểm tra logo mặc định
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
   useEffect(() => {
@@ -218,7 +217,7 @@ const App: React.FC = () => {
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
                 <p className="text-gray-500 text-sm mt-1 uppercase font-bold tracking-widest opacity-60">Fitness Department</p>
               </div>
-              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2">
+              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
                 <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
               </button>
@@ -257,7 +256,7 @@ const App: React.FC = () => {
 
         <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
-           <div>
+            <div>
               {/* Loại bỏ brightness-0 invert để giữ màu gốc của logo */}
               <img src={headerConfig.logo} alt="Logo" className="h-12 mx-auto md:mx-0 opacity-100 object-contain" />
               <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
@@ -265,12 +264,15 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
               <div className="space-y-2 text-sm font-bold">
-                <p>Hotline: {headerConfig.hotline}</p>
-                <p>Website: {headerConfig.website}</p>
+                <p>Hotline: <span className="text-teal-300">{headerConfig.hotline}</span></p>
+                <p>Website: <span className="text-teal-300">{headerConfig.website}</span></p>
               </div>
             </div>
             <div>
-              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">Phát triển bởi Bùi Thái Sơn<br/>© 2026 CIPUTRA CLUB. All rights reserved.</p>
+              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
+                Phát triển bởi Bùi Thái Sơn<br/>
+                © 2026 CIPUTRA CLUB. All rights reserved.
+              </p>
             </div>
           </div>
         </footer>
