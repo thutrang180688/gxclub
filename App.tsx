@@ -287,7 +287,7 @@ const App: React.FC = () => {
         )}
 
         {/* --- PHẦN FOOTER CHUẨN --- */}
-        <footer className="mt-24 px-6 py-12 bg-teal-0 text-white rounded-t-[3rem] border-t border-teal-900">
+        <footer className="mt-24 px-6 py-12 bg-teal-1000 text-white rounded-t-[3rem] border-t border-teal-900">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
             <div>
               {/* Sử dụng đúng container giống Header để trình duyệt render sạch nhất */}
