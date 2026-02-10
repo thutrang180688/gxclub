@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Role, User, ClassSession, HeaderConfig, PermissionRecord, AppNotification, Rating } from './types';
 import Header from './components/Header';
@@ -44,7 +43,6 @@ const App: React.FC = () => {
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
-  // Hàm kích hoạt thông báo trên màn hình điện thoại
   const triggerNativeNotification = (title: string, body: string) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
@@ -98,7 +96,6 @@ const App: React.FC = () => {
       if (data.users) setUserRegistry(data.users);
       
       if (data.notifications) {
-        // Kiểm tra nếu có tin mới thì hiện thông báo hệ thống
         if (notifications.length > 0 && data.notifications.length > notifications.length) {
           const latest = data.notifications[0];
           triggerNativeNotification("THÔNG BÁO GX MỚI", latest.message);
@@ -137,13 +134,12 @@ const App: React.FC = () => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
     
-    // Yêu cầu quyền thông báo ngay khi vào app
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
     syncFromCloud();
-    const interval = setInterval(syncFromCloud, 60000); // 1 phút đồng bộ 1 lần
+    const interval = setInterval(syncFromCloud, 60000);
     return () => {
       window.removeEventListener('resize', handleResize);
       clearInterval(interval);
@@ -193,8 +189,6 @@ const App: React.FC = () => {
     const updated = [newNotif, ...notifications];
     setNotifications(updated);
     postToCloud('addNotification', newNotif);
-    
-    // Admin gửi tin cũng tự hiện cho chính mình để kiểm tra
     triggerNativeNotification(type === 'ALERT' ? "THÔNG BÁO KHẨN" : "CẬP NHẬT LỊCH", message);
   };
 
@@ -292,15 +286,16 @@ const App: React.FC = () => {
           <RatingModal session={ratingTarget} user={currentUser} onClose={() => setRatingTarget(null)} onSave={handleAddRating} />
         )}
 
-        <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
+        {/* Footer đã được sửa lỗi mờ ảnh */}
+        <footer className="mt-24 px-6 py-12 bg-teal-950/95 text-white rounded-t-[3rem] backdrop-blur-md border-t border-teal-900">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
             <div>
-              <div className="inline-block bg-transparent border-none outline-none overflow-hidden">
+              <div className="inline-block">
                 <img 
                   src={headerConfig.logo} 
                   alt="Ciputra Logo Footer" 
-                  className="h-12 w-auto mx-auto md:mx-0 block object-contain border-none shadow-none" 
-                  style={{ filter: 'none', mixBlendMode: 'normal' }}
+                  className="h-12 w-auto mx-auto md:mx-0 block object-contain" 
+                  style={{ filter: 'drop-shadow(0px 0px 0px rgba(0,0,0,0))' }}
                   loading="eager"
                 />
               </div>
