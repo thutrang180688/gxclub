@@ -230,6 +230,7 @@ const App: React.FC = () => {
       <Header config={headerConfig} user={currentUser} onGoogleLogin={handleGoogleLogin} onLogout={handleLogout} onToggleAdmin={() => setShowAdmin(!showAdmin)} />
       
       <main className="flex-1 max-w-[1440px] mx-auto w-full px-0 sm:px-4 py-4 lg:py-8 pb-12">
+        {/* ... (Các phần nội dung chính không đổi) ... */}
         <div className="grid lg:grid-cols-12 gap-8 px-4 lg:px-0">
           <div className="lg:col-span-8 xl:col-span-9">
             {headerConfig.holidayNotice && (
@@ -286,21 +287,28 @@ const App: React.FC = () => {
           <RatingModal session={ratingTarget} user={currentUser} onClose={() => setRatingTarget(null)} onSave={handleAddRating} />
         )}
 
-        {/* Footer đã được sửa lỗi mờ ảnh */}
-        <footer className="mt-24 px-6 py-12 bg-teal-950/95 text-white rounded-t-[3rem] backdrop-blur-md border-t border-teal-900">
+        {/* PHẦN FOOTER ĐÃ SỬA TRIỆT ĐỂ LỖI MỜ ẢNH */}
+        <footer className="mt-24 px-6 py-12 bg-teal-950/95 text-white rounded-t-[3rem] backdrop-blur-md border-t border-teal-800/50">
           <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
             <div>
-              <div className="inline-block">
+              {/* Thẻ div bọc đơn giản, bỏ overflow-hidden */}
+              <div className="flex items-center justify-center md:justify-start min-h-[48px]">
                 <img 
                   src={headerConfig.logo} 
                   alt="Ciputra Logo Footer" 
-                  className="h-12 w-auto mx-auto md:mx-0 block object-contain" 
-                  style={{ filter: 'drop-shadow(0px 0px 0px rgba(0,0,0,0))' }}
+                  className="h-12 w-auto block object-contain" 
+                  style={{ 
+                    /* Mẹo ép pixel trắng tuyệt đối và triệt tiêu màng mờ */
+                    filter: 'brightness(0) invert(1) drop-shadow(0 0 0.5px rgba(255,255,255,0.1))',
+                    WebkitFilter: 'brightness(0) invert(1)',
+                    transform: 'translateZ(0)', // Ép dùng phần cứng để render
+                  }}
                   loading="eager"
                 />
               </div>
               <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
             </div>
+            
             <div className="space-y-4">
               <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
               <div className="space-y-2 text-sm font-bold">
@@ -308,6 +316,7 @@ const App: React.FC = () => {
                 <p>Website: <span className="text-teal-300">{headerConfig.website}</span></p>
               </div>
             </div>
+
             <div>
               <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
                 Phát triển bởi Bùi Thái Sơn<br/>
