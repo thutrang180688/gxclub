@@ -12,7 +12,7 @@ import RatingModal from './components/RatingModal';
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
 
-const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55086559890_234d68a167_o.png";
+const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55088078719_1e5e49e97d_o.jpg";
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
