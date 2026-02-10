@@ -78,6 +78,11 @@ const AdminPanel: React.FC<Props> = ({
     { key: 'OTHER', label: 'Tím', color: 'bg-indigo-500' },
   ];
 
+  // Sắp xếp đánh giá mới nhất lên trên
+  const sortedRatings = [...ratings].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
     <div className="fixed inset-0 bg-teal-950/80 backdrop-blur-xl flex items-center justify-center p-4 lg:p-8">
       <div className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden">
@@ -115,7 +120,7 @@ const AdminPanel: React.FC<Props> = ({
              <div className="space-y-12 animate-fade">
                 <section className="bg-amber-50 rounded-[2.5rem] p-8 border border-amber-200 shadow-sm">
                    <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                     <span>📢</span> Gửi thông báo khẩn (Hội viên sẽ nhận được ngay)
+                     <span>📢</span> Gửi thông báo khẩn (Sẽ hiện trên màn hình điện thoại hội viên)
                    </h3>
                    <div className="space-y-4">
                      <textarea 
@@ -275,12 +280,12 @@ const AdminPanel: React.FC<Props> = ({
 
           {activeTab === 'RATINGS' && (
              <div className="space-y-6 animate-fade">
-               <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Phản hồi Hội viên</h3>
+               <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Phản hồi Hội viên (Mới nhất ở trên)</h3>
                <div className="grid gap-4">
-                  {ratings.length === 0 ? (
+                  {sortedRatings.length === 0 ? (
                     <p className="text-center py-12 text-gray-400 font-bold uppercase text-xs">Chưa có đánh giá nào</p>
                   ) : (
-                    ratings.map(r => {
+                    sortedRatings.map(r => {
                       const sessionInfo = schedule.find(s => s.id === r.classId);
                       return (
                         <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">

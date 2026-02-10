@@ -44,6 +44,20 @@ const App: React.FC = () => {
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
+  // Hàm kích hoạt thông báo trên màn hình điện thoại
+  const triggerNativeNotification = (title: string, body: string) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, { body, icon: NEW_BRAND_LOGO });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          new Notification(title, { body, icon: NEW_BRAND_LOGO });
+        }
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       const lowerEmail = currentUser.email.toLowerCase();
@@ -71,6 +85,7 @@ const App: React.FC = () => {
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
+      
       if (data.schedule) setSchedule(data.schedule);
       
       if (data.header) {
@@ -81,7 +96,16 @@ const App: React.FC = () => {
       }
       
       if (data.users) setUserRegistry(data.users);
-      if (data.notifications) setNotifications(data.notifications);
+      
+      if (data.notifications) {
+        // Kiểm tra nếu có tin mới thì hiện thông báo hệ thống
+        if (notifications.length > 0 && data.notifications.length > notifications.length) {
+          const latest = data.notifications[0];
+          triggerNativeNotification("THÔNG BÁO GX MỚI", latest.message);
+        }
+        setNotifications(data.notifications);
+      }
+      
       if (data.permissions) setPermissions(data.permissions);
       if (data.ratings) setRatings(data.ratings);
       setIsLoading(false);
@@ -112,8 +136,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
+    
+    // Yêu cầu quyền thông báo ngay khi vào app
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
     syncFromCloud();
-    const interval = setInterval(syncFromCloud, 120000);
+    const interval = setInterval(syncFromCloud, 60000); // 1 phút đồng bộ 1 lần
     return () => {
       window.removeEventListener('resize', handleResize);
       clearInterval(interval);
@@ -153,10 +183,19 @@ const App: React.FC = () => {
   };
 
   const addNotification = (message: string, type: 'INFO' | 'ALERT' = 'INFO') => {
-    const newNotif: AppNotification = { id: Date.now().toString(), message, timestamp: new Date().toISOString(), type, sender: currentUser?.name || 'Hệ thống' };
-    const updated = [newNotif, ...notifications].slice(0, 20);
+    const newNotif: AppNotification = { 
+      id: Date.now().toString(), 
+      message, 
+      timestamp: new Date().toISOString(), 
+      type, 
+      sender: currentUser?.name || 'Hệ thống' 
+    };
+    const updated = [newNotif, ...notifications];
     setNotifications(updated);
     postToCloud('addNotification', newNotif);
+    
+    // Admin gửi tin cũng tự hiện cho chính mình để kiểm tra
+    triggerNativeNotification(type === 'ALERT' ? "THÔNG BÁO KHẨN" : "CẬP NHẬT LỊCH", message);
   };
 
   const handleGoogleLogin = (email: string, name: string, photo: string) => {
