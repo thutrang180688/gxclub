@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Role, User, ClassSession, HeaderConfig, PermissionRecord, AppNotification, Rating } from './types';
 import Header from './components/Header';
@@ -16,7 +17,7 @@ const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55088078719_1e5e49e9
 
 const DEFAULT_HEADER: HeaderConfig = {
   logo: NEW_BRAND_LOGO,
-  address: 'Ciputra Club, Phú Thượng, Hà Nội',
+  address: 'Ciputra Club, Bắc Từ Liêm, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
   scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`,
@@ -43,6 +44,7 @@ const App: React.FC = () => {
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
+  // Hàm kích hoạt thông báo trên màn hình điện thoại
   const triggerNativeNotification = (title: string, body: string) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
@@ -139,7 +141,7 @@ const App: React.FC = () => {
     }
 
     syncFromCloud();
-    const interval = setInterval(syncFromCloud, 60000);
+    const interval = setInterval(syncFromCloud, 60000); 
     return () => {
       window.removeEventListener('resize', handleResize);
       clearInterval(interval);
@@ -247,6 +249,7 @@ const App: React.FC = () => {
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
+                <p className="text-gray-500 text-sm mt-1 uppercase font-bold tracking-widest opacity-60">Fitness Department</p>
               </div>
               <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
                 <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -285,22 +288,8 @@ const App: React.FC = () => {
           <RatingModal session={ratingTarget} user={currentUser} onClose={() => setRatingTarget(null)} onSave={handleAddRating} />
         )}
 
-        {/* --- PHẦN FOOTER CHUẨN --- */}
-        <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem] border-t border-teal-900">
-          <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
-            <div>
-              {/* Sử dụng đúng container giống Header để trình duyệt render sạch nhất */}
-              <div className="p-1 flex items-center justify-center md:justify-start min-w-[40px]">
-                <img 
-                  src={headerConfig.logo} 
-                  alt="Ciputra Logo Footer" 
-                  className="h-10 lg:h-14 w-auto object-contain"
-                  style={{ filter: 'none' }} // Đảm bảo không có bộ lọc nào can thiệp
-                  loading="eager"
-                />
-              </div>
-              <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
-            </div>
+        <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem]">
+          <div className="max-w-2xl mx-auto flex flex-col items-center text-center space-y-8">
             <div className="space-y-4">
               <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
               <div className="space-y-2 text-sm font-bold">
@@ -308,9 +297,9 @@ const App: React.FC = () => {
                 <p>Website: <span className="text-teal-300">{headerConfig.website}</span></p>
               </div>
             </div>
-            <div>
-              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
-                 © 2026 CIPUTRA CLUB. All rights reserved.
+            <div className="pt-6 border-t border-teal-900 w-full">
+              <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed tracking-widest">
+                © 2026 CIPUTRA CLUB. All rights reserved.
               </p>
             </div>
           </div>
