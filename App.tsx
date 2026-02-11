@@ -287,21 +287,7 @@ const App: React.FC = () => {
 
         {/* --- PHẦN FOOTER CHUẨN --- */}
         <footer className="mt-24 px-6 py-12 bg-teal-950 text-white rounded-t-[3rem] border-t border-teal-900">
-          <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-8 text-center md:text-left">
-            <div>
-              {/* Sử dụng đúng container giống Header để trình duyệt render sạch nhất */}
-              <div className="p-1 flex items-center justify-center md:justify-start min-w-[40px]">
-                <img 
-                  src={headerConfig.logo} 
-                  alt="Ciputra Logo Footer" 
-                  className="h-10 lg:h-14 w-auto object-contain"
-                  style={{ filter: 'none' }} // Đảm bảo không có bộ lọc nào can thiệp
-                  loading="eager"
-                />
-              </div>
-              <p className="text-[10px] text-teal-400 font-bold uppercase mt-4 tracking-widest">{headerConfig.address}</p>
-            </div>
-            <div className="space-y-4">
+           <div className="space-y-4">
               <h5 className="text-[10px] font-black uppercase text-teal-600 tracking-[0.3em]">Liên hệ</h5>
               <div className="space-y-2 text-sm font-bold">
                 <p>Hotline: <span className="text-teal-300">{headerConfig.hotline}</span></p>
@@ -310,8 +296,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <p className="text-[9px] text-teal-700 font-black uppercase leading-relaxed">
-                Phát triển bởi Bùi Thái Sơn<br/>
-                © 2026 CIPUTRA CLUB. All rights reserved.
+             © 2026 CIPUTRA CLUB. All rights reserved.
               </p>
             </div>
           </div>
