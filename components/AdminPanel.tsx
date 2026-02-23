@@ -27,13 +27,20 @@ const AdminPanel: React.FC<Props> = ({
   const [broadcastMsg, setBroadcastMsg] = useState('');
   
   const [newClass, setNewClass] = useState<Partial<ClassSession>>({
-    dayIndex: 0, 
+    dayIndex: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
+    date: new Date().toISOString().split('T')[0],
     time: '08:00 - 09:00', 
     className: '', 
     instructor: '', 
     category: 'YOGA', 
     status: 'NORMAL'
   });
+
+  const handleDateChange = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+    setNewClass({ ...newClass, date: dateStr, dayIndex });
+  };
 
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
@@ -157,7 +164,16 @@ const AdminPanel: React.FC<Props> = ({
 
                 <section className="bg-teal-50 rounded-[2.5rem] p-8 border border-teal-100 shadow-sm">
                    <h3 className="text-sm font-black text-teal-900 uppercase tracking-widest mb-8">➕ Thêm lớp học mới</h3>
-                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Ngày học</label>
+                        <input 
+                          type="date"
+                          className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" 
+                          value={newClass.date} 
+                          onChange={e => handleDateChange(e.target.value)} 
+                        />
+                      </div>
                       <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Giờ học</label>
                         <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" value={newClass.time} onChange={e => setNewClass({...newClass, time: e.target.value})} placeholder="Vd: 08:00 - 09:00" />
@@ -171,9 +187,9 @@ const AdminPanel: React.FC<Props> = ({
                         <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none uppercase" value={newClass.instructor} onChange={e => setNewClass({...newClass, instructor: e.target.value.toUpperCase()})} placeholder="HLV..." />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ</label>
-                        <select className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" value={newClass.dayIndex} onChange={e => setNewClass({...newClass, dayIndex: parseInt(e.target.value)})}>
-                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({getWeekDate(i)})</option>)}
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ (Tự động theo ngày)</label>
+                        <select disabled className="w-full bg-slate-50 border rounded-2xl p-4 text-xs font-bold outline-none opacity-60" value={newClass.dayIndex} onChange={e => setNewClass({...newClass, dayIndex: parseInt(e.target.value)})}>
+                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
                         </select>
                       </div>
                       <div className="space-y-1 lg:col-span-2">
