@@ -16,6 +16,23 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = dayIndex - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
+
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);
     if (classRatings.length === 0) return null;
@@ -50,7 +67,8 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
         {DAYS_OF_WEEK.map((day, idx) => (
           <div key={idx} className="p-4 text-center border-r border-teal-800/50 last:border-0">
             <div className="text-[9px] font-light text-teal-300 uppercase tracking-widest">{day.eng}</div>
-            <div className="text-lg font-black tracking-tighter">{day.vn.toUpperCase()}</div>
+            <div className="text-lg font-black tracking-tighter leading-none">{day.vn.toUpperCase()}</div>
+            <div className="text-[11px] font-black text-teal-400 mt-1">{getWeekDate(idx)}</div>
           </div>
         ))}
       </div>
