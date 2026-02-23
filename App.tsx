@@ -12,7 +12,6 @@ import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
-const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55088078719_1e5e49e97d_o.jpg";
 
@@ -31,17 +30,7 @@ const App: React.FC = () => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
   
-  const [schedule, setSchedule] = useState<ClassSession[]>(() => {
-    const saved = localStorage.getItem('gx_schedule_v7');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const scheduleRef = React.useRef<ClassSession[]>([]);
-  
-  // Đồng bộ ref với state
-  useEffect(() => {
-    scheduleRef.current = schedule;
-  }, [schedule]);
-
+  const [schedule, setSchedule] = useState<ClassSession[]>([]);
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
   const [permissions, setPermissions] = useState<PermissionRecord[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -50,32 +39,10 @@ const App: React.FC = () => {
   const [ratingTarget, setRatingTarget] = useState<ClassSession | null>(null);
   const [userRegistry, setUserRegistry] = useState<User[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
-  const [weekOffset, setWeekOffset] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const lastLocalUpdate = React.useRef<number>(Number(localStorage.getItem('gx_last_update_v7') || 0));
-
-  const setLastUpdate = (time: number) => {
-    lastLocalUpdate.current = time;
-    localStorage.setItem('gx_last_update_v7', time.toString());
-  };
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
-
-  // Hàm kích hoạt thông báo trên màn hình điện thoại
-  const triggerNativeNotification = (title: string, body: string) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      new Notification(title, { body, icon: NEW_BRAND_LOGO });
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          new Notification(title, { body, icon: NEW_BRAND_LOGO });
-        }
-      });
-    }
-  };
 
   useEffect(() => {
     if (currentUser) {
@@ -95,74 +62,33 @@ const App: React.FC = () => {
     }
   }, [permissions, currentUser?.email]);
 
-  const syncFromCloud = async (force = false) => {
+  const syncFromCloud = async () => {
     if (!GAS_WEBAPP_URL) {
-      console.warn("VITE_GAS_URL is missing. Check your environment variables.");
+      loadFromLocalStorage();
       setIsLoading(false);
       return;
     }
-    
-    const isScheduleEmpty = scheduleRef.current.length === 0;
-    const shouldSkipLock = force || isScheduleEmpty;
-
-    if (!shouldSkipLock) {
-      if (Date.now() - lastLocalUpdate.current < 60000) return;
-      if (isSyncing) return;
-    }
-
-    setIsSyncing(true);
-    console.log("Đang kết nối đến Google Sheet...");
-
     try {
-      // Sử dụng fetch với cấu hình tối giản để tránh lỗi CORS
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
-      
-      if (!response.ok) throw new Error(`Lỗi kết nối: ${response.status}`);
-      
       const data = await response.json();
-      
-      if (data.schedule && Array.isArray(data.schedule)) {
-        const currentLocalSchedule = scheduleRef.current;
-        
-        // HỢP NHẤT DỮ LIỆU (MERGE)
-        // Ưu tiên dữ liệu từ Cloud, nhưng giữ lại các lớp Local mới tạo chưa kịp sync
-        const cloudIds = new Set(data.schedule.map((s: ClassSession) => s.id));
-        const localOnly = currentLocalSchedule.filter(s => !cloudIds.has(s.id));
-        const combined = [...data.schedule, ...localOnly];
-
-        // KHÔNG XÓA LỊCH CŨ - Giữ lại tất cả để xem được tuần trước/sau
-        // Chỉ lọc bỏ các dữ liệu rác nếu cần (ví dụ quá 1 tháng)
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        const limitDate = oneMonthAgo.toISOString().split('T')[0];
-        
-        const finalSchedule = combined.filter((s: ClassSession) => s.date >= limitDate);
-
-        if (JSON.stringify(finalSchedule) !== JSON.stringify(currentLocalSchedule)) {
-          setSchedule(finalSchedule);
-          localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
-          console.log("Đã cập nhật lịch mới từ Cloud.");
-        }
-      }
+      if (data.schedule) setSchedule(data.schedule);
       
       if (data.header) {
         const finalLogo = isOldLogo(data.header.logo) ? NEW_BRAND_LOGO : data.header.logo;
-        const newHeader = { ...data.header, logo: finalLogo };
-        setHeaderConfig(newHeader);
-        localStorage.setItem('gx_header_v7', JSON.stringify(newHeader));
+        setHeaderConfig({ ...data.header, logo: finalLogo });
+      } else {
+        setHeaderConfig(DEFAULT_HEADER);
       }
       
       if (data.users) setUserRegistry(data.users);
       if (data.notifications) setNotifications(data.notifications);
       if (data.permissions) setPermissions(data.permissions);
       if (data.ratings) setRatings(data.ratings);
-      
       setIsLoading(false);
     } catch (error) {
-      console.error("Critical Sync Error:", error);
+      console.error("Cloud Error:", error);
+      loadFromLocalStorage();
       setIsLoading(false);
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -186,13 +112,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
-    
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-
     syncFromCloud();
-    const interval = setInterval(syncFromCloud, 60000); 
+    const interval = setInterval(syncFromCloud, 120000);
     return () => {
       window.removeEventListener('resize', handleResize);
       clearInterval(interval);
@@ -201,21 +122,14 @@ const App: React.FC = () => {
 
   const postToCloud = async (action: string, payload: any) => {
     if (!GAS_WEBAPP_URL) return;
-    setIsSyncing(true);
-    setLastUpdate(Date.now());
     try {
       await fetch(GAS_WEBAPP_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, data: payload })
       });
-      // Tăng thời gian chờ phản hồi từ GAS lên 15s
-      setTimeout(() => setIsSyncing(false), 15000);
-    } catch (e) { 
-      console.warn("Sync warning:", e); 
-      setIsSyncing(false);
-    }
+    } catch (e) { console.warn("Sync warning:", e); }
   };
 
   const handleUpdateSchedule = (newSchedule: ClassSession[]) => {
@@ -239,17 +153,10 @@ const App: React.FC = () => {
   };
 
   const addNotification = (message: string, type: 'INFO' | 'ALERT' = 'INFO') => {
-    const newNotif: AppNotification = { 
-      id: Date.now().toString(), 
-      message, 
-      timestamp: new Date().toISOString(), 
-      type, 
-      sender: currentUser?.name || 'Hệ thống' 
-    };
-    const updated = [newNotif, ...notifications];
+    const newNotif: AppNotification = { id: Date.now().toString(), message, timestamp: new Date().toISOString(), type, sender: currentUser?.name || 'Hệ thống' };
+    const updated = [newNotif, ...notifications].slice(0, 20);
     setNotifications(updated);
     postToCloud('addNotification', newNotif);
-    triggerNativeNotification(type === 'ALERT' ? "THÔNG BÁO KHẨN" : "CẬP NHẬT LỊCH", message);
   };
 
   const handleGoogleLogin = (email: string, name: string, photo: string) => {
@@ -268,9 +175,6 @@ const App: React.FC = () => {
       setUserRegistry(updatedRegistry);
       postToCloud('loginUser', newUser);
     }
-    
-    // Sau khi login, ép buộc đồng bộ dữ liệu ngay
-    setTimeout(() => syncFromCloud(true), 1000);
   };
 
   const handleLogout = () => {
@@ -310,34 +214,21 @@ const App: React.FC = () => {
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
-                <div className="flex items-center gap-2 mt-2 justify-center lg:justify-start">
-                  <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 bg-white border rounded-xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
-                    <svg className="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  <span className="text-[10px] font-black uppercase text-teal-900 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100">
-                    {weekOffset === 0 ? 'Tuần này' : weekOffset === 1 ? 'Tuần sau' : weekOffset === -1 ? 'Tuần trước' : `Tuần ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
-                  </span>
-                  <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-2 bg-white border rounded-xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
-                    <svg className="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  {weekOffset !== 0 && (
-                    <button onClick={() => setWeekOffset(0)} className="text-[8px] font-black text-gray-400 uppercase hover:text-teal-600 ml-2">Hiện tại</button>
-                  )}
-                </div>
+           
               </div>
-              <button onClick={() => syncFromCloud(true)} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
-                <svg className={`w-4 h-4 text-teal-600 ${isSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span className="text-[10px] font-black uppercase text-slate-500">{isSyncing ? 'Đang tải...' : 'Đồng bộ'}</span>
+              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
+                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
               </button>
             </div>
 
             {isMobile ? (
               <div className="flex flex-col gap-4">
-                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} weekOffset={weekOffset} />
-                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
+                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} />
+                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} />
               </div>
             ) : (
-              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
+              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} />
             )}
           </div>
 
@@ -354,7 +245,6 @@ const App: React.FC = () => {
               permissions={permissions} onUpdatePermissions={(p) => { setPermissions(p); postToCloud('updatePermissions', p); }}
               rootEmail={ROOT_ADMIN_EMAIL} onClose={() => setShowAdmin(false)} registeredUsers={userRegistry}
               schedule={schedule} onUpdateSchedule={handleUpdateSchedule} onNotify={addNotification} ratings={ratings}
-              isSyncing={isSyncing}
             />
           </div>
         )}

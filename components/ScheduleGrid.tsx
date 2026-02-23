@@ -10,39 +10,11 @@ interface Props {
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
-  weekOffset?: number;
 }
 
-const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings, weekOffset = 0 }) => {
+const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings }) => {
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER';
-
-  const getWeekDateFull = (dayIndex: number) => {
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    return targetDate.toISOString().split('T')[0];
-  };
-
-  const getWeekDate = (dayIndex: number) => {
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    
-    const day = targetDate.getDate();
-    const month = targetDate.getMonth() + 1;
-    
-    if (targetDate.getMonth() !== now.getMonth()) {
-      return day + '/' + month;
-    }
-    return day.toString();
-  };
 
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);
@@ -78,20 +50,17 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
         {DAYS_OF_WEEK.map((day, idx) => (
           <div key={idx} className="p-4 text-center border-r border-teal-800/50 last:border-0">
             <div className="text-[9px] font-light text-teal-300 uppercase tracking-widest">{day.eng}</div>
-            <div className="text-lg font-black tracking-tighter leading-none">{day.vn.toUpperCase()}</div>
-            <div className="text-[11px] font-black text-teal-400 mt-1">{getWeekDate(idx)}</div>
+            <div className="text-lg font-black tracking-tighter">{day.vn.toUpperCase()}</div>
           </div>
         ))}
       </div>
       <div className="grid grid-cols-7 divide-x divide-gray-100 bg-slate-50 min-h-[600px]">
-        {DAYS_OF_WEEK.map((_, dayIdx) => {
-          const targetDateStr = getWeekDateFull(dayIdx);
-          return (
-            <div key={dayIdx} className="p-3 space-y-4">
-              {(schedule as any[])
-                .filter(s => s.date === targetDateStr)
-                .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time))
-                .map(session => {
+        {DAYS_OF_WEEK.map((_, dayIdx) => (
+          <div key={dayIdx} className="p-3 space-y-4">
+            {schedule
+              .filter(s => s.dayIndex === dayIdx)
+              .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time))
+              .map(session => {
                 const avgStar = getClassRating(session.id);
                 return (
                   <div 
@@ -99,7 +68,7 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
                     className={`p-4 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm transition-all relative group flex flex-col`}
                   >
                     <div className="text-[8px] font-black text-gray-400 text-center mb-2">{session.time}</div>
-                    <div className={`text-[10px] font-black text-white text-center py-2 rounded-xl uppercase shadow-sm ${CATEGORY_COLORS[session.category as keyof typeof CATEGORY_COLORS]}`}>{session.className}</div>
+                    <div className={`text-[10px] font-black text-white text-center py-2 rounded-xl uppercase shadow-sm ${CATEGORY_COLORS[session.category]}`}>{session.className}</div>
                     <div className="text-[10px] font-black text-teal-900 text-center mt-2 uppercase">{session.instructor}</div>
                     
                     <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-2">
@@ -121,10 +90,9 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
                     )}
                   </div>
                 );
-              })}
-            </div>
-          );
-        })}
+            })}
+          </div>
+        ))}
       </div>
       {editing && <ClassModal session={editing} onClose={() => setEditing(null)} onSave={handleSave} onDelete={(id) => { onUpdate(schedule.filter(x => x.id !== id)); setEditing(null); }} />}
     </div>
