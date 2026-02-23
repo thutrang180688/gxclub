@@ -96,13 +96,17 @@ const App: React.FC = () => {
       
       // Kiểm tra tính hợp lệ của dữ liệu trước khi cập nhật
       if (data.schedule && Array.isArray(data.schedule)) {
-        // Nếu dữ liệu cloud trống mà local đang có dữ liệu, và vừa cập nhật gần đây, thì bỏ qua
-        if (data.schedule.length === 0 && schedule.length > 0 && (Date.now() - lastLocalUpdate.current < 60000)) {
-          console.log("Cloud returned empty schedule, but local has data. Skipping sync to prevent data loss.");
-        } else {
-          setSchedule(data.schedule);
-          localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+        // CƠ CHẾ BẢO VỆ: Nếu cloud trả về rỗng nhưng local đang có nhiều hơn 0 lớp
+        // và không phải do admin vừa thực hiện xóa sạch, thì bỏ qua việc cập nhật rỗng.
+        if (data.schedule.length === 0 && schedule.length > 0) {
+          const lastUpdateDiff = Date.now() - lastLocalUpdate.current;
+          if (lastUpdateDiff < 300000) { // Trong vòng 5 phút kể từ lần cập nhật local cuối
+             console.warn("Cloud returned empty, but local has data. Protection triggered.");
+             return;
+          }
         }
+        setSchedule(data.schedule);
+        localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
       }
       
       if (data.header) {
