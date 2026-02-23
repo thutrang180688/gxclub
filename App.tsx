@@ -12,6 +12,7 @@ import RatingModal from './components/RatingModal';
 
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 const GAS_WEBAPP_URL = (import.meta as any).env?.VITE_GAS_URL || '';
+const GOOGLE_CLIENT_ID = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 
 const NEW_BRAND_LOGO = "https://live.staticflickr.com/65535/55088078719_1e5e49e97d_o.jpg";
 
@@ -30,7 +31,10 @@ const App: React.FC = () => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
   
-  const [schedule, setSchedule] = useState<ClassSession[]>([]);
+  const [schedule, setSchedule] = useState<ClassSession[]>(() => {
+    const saved = localStorage.getItem('gx_schedule_v7');
+    return saved ? JSON.parse(saved) : [];
+  });
   const scheduleRef = React.useRef<ClassSession[]>([]);
   
   // Đồng bộ ref với state
@@ -93,36 +97,42 @@ const App: React.FC = () => {
 
   const syncFromCloud = async (force = false) => {
     if (!GAS_WEBAPP_URL) {
-      console.warn("Chưa cấu hình VITE_GAS_URL trong môi trường.");
-      loadFromLocalStorage();
+      console.warn("VITE_GAS_URL is missing. Check your environment variables.");
       setIsLoading(false);
       return;
     }
     
-    // Nếu lịch đang trống (máy mới/mới login), hoặc được yêu cầu force, thì bỏ qua khóa thời gian
     const isScheduleEmpty = scheduleRef.current.length === 0;
     const shouldSkipLock = force || isScheduleEmpty;
 
     if (!shouldSkipLock) {
-      if (Date.now() - lastLocalUpdate.current < 120000) return;
+      if (Date.now() - lastLocalUpdate.current < 60000) return;
       if (isSyncing) return;
     }
 
     setIsSyncing(true);
+    console.log("Syncing from cloud...", GAS_WEBAPP_URL);
 
     try {
-      const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
+      const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
       const data = await response.json();
+      console.log("Cloud data received:", data);
       
       if (data.schedule && Array.isArray(data.schedule)) {
         const currentLocalSchedule = scheduleRef.current;
         
-        // CHIẾN LƯỢC HỢP NHẤT (MERGE)
+        // MERGE LOGIC
         const cloudIds = new Set(data.schedule.map((s: ClassSession) => s.id));
         const localOnly = currentLocalSchedule.filter(s => !cloudIds.has(s.id));
         let combined = [...data.schedule, ...localOnly];
 
-        // DỌN DẸP THEO TUẦN
+        // WEEKLY CLEANUP
         const now = new Date();
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
@@ -133,8 +143,6 @@ const App: React.FC = () => {
         const finalSchedule = combined.filter((s: ClassSession) => s.date >= startOfWeekStr);
 
         if (JSON.stringify(finalSchedule) !== JSON.stringify(currentLocalSchedule)) {
-          // Nếu máy mới (lịch trống) hoặc force, thì luôn cập nhật
-          // Nếu máy cũ đang có dữ liệu, chỉ cập nhật nếu cloud nhiều hơn hoặc bằng
           if (shouldSkipLock || finalSchedule.length >= currentLocalSchedule.length) {
             setSchedule(finalSchedule);
             localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
@@ -150,17 +158,13 @@ const App: React.FC = () => {
       }
       
       if (data.users) setUserRegistry(data.users);
-      
-      if (data.notifications && Array.isArray(data.notifications)) {
-        setNotifications(data.notifications);
-      }
-      
+      if (data.notifications) setNotifications(data.notifications);
       if (data.permissions) setPermissions(data.permissions);
       if (data.ratings) setRatings(data.ratings);
+      
       setIsLoading(false);
     } catch (error) {
-      console.error("Cloud Error:", error);
-      loadFromLocalStorage();
+      console.error("Critical Sync Error:", error);
       setIsLoading(false);
     } finally {
       setIsSyncing(false);
