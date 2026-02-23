@@ -98,37 +98,39 @@ const App: React.FC = () => {
       return;
     }
     
-    // Tăng thời gian khóa lên 30s để GAS có đủ thời gian xử lý hoàn tất
-    if (Date.now() - lastLocalUpdate.current < 30000) return;
+    // 1. KHÓA ĐỒNG BỘ: Nếu vừa mới cập nhật local (trong vòng 60s), tuyệt đối không sync từ cloud
+    // để tránh việc cloud trả về dữ liệu cũ chưa kịp lưu xong.
+    if (Date.now() - lastLocalUpdate.current < 60000) return;
     if (isSyncing) return;
 
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       
+      // Kiểm tra lại khóa một lần nữa sau khi fetch xong (vì fetch có thể mất vài giây)
+      if (Date.now() - lastLocalUpdate.current < 60000) return;
+
       if (data.schedule && Array.isArray(data.schedule)) {
         const currentLocalSchedule = scheduleRef.current;
         
-        // CƠ CHẾ BẢO VỆ NÂNG CAO:
-        // 1. Nếu cloud trả về rỗng nhưng local đang có dữ liệu -> CHẶN.
-        if (currentLocalSchedule.length > 0 && data.schedule.length === 0) {
-          console.warn("Bảo vệ: Cloud trả về rỗng.");
+        // 2. CƠ CHẾ BẢO VỆ DỮ LIỆU:
+        // Nếu cloud trả về ít lớp hơn local, nghi ngờ là dữ liệu cũ chưa cập nhật -> BỎ QUA.
+        if (data.schedule.length < currentLocalSchedule.length && currentLocalSchedule.length > 0) {
+          console.warn("Bảo vệ: Cloud trả về ít dữ liệu hơn local. Giữ lại dữ liệu local mới hơn.");
           return;
         }
 
-        // 2. Nếu số lượng lớp ở Cloud ÍT HƠN ở Local và vừa mới cập nhật gần đây (trong 2 phút)
-        // -> CHẶN (vì có thể Cloud đang trả về dữ liệu cũ chưa kịp cập nhật).
-        if (data.schedule.length < currentLocalSchedule.length) {
-          const recentUpdate = Date.now() - lastLocalUpdate.current < 120000;
-          if (recentUpdate) {
-            console.warn("Bảo vệ: Cloud trả về ít dữ liệu hơn local. Nghi ngờ dữ liệu cũ.");
-            return;
-          }
-        }
+        // 3. DỌN DẸP THEO TUẦN (Thay vì theo ngày):
+        // Chỉ xóa các lớp đã cũ hơn 14 ngày để giải phóng bộ nhớ.
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        const fourteenDaysAgoStr = fourteenDaysAgo.toISOString().split('T')[0];
+        
+        const cleanedSchedule = data.schedule.filter((s: ClassSession) => s.date >= fourteenDaysAgoStr);
 
-        if (JSON.stringify(data.schedule) !== JSON.stringify(currentLocalSchedule)) {
-          setSchedule(data.schedule);
-          localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+        if (JSON.stringify(cleanedSchedule) !== JSON.stringify(currentLocalSchedule)) {
+          setSchedule(cleanedSchedule);
+          localStorage.setItem('gx_schedule_v7', JSON.stringify(cleanedSchedule));
         }
       }
       
