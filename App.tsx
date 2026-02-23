@@ -111,42 +111,37 @@ const App: React.FC = () => {
     }
 
     setIsSyncing(true);
-    console.log("Syncing from cloud...", GAS_WEBAPP_URL);
+    console.log("Đang kết nối đến Google Sheet...");
 
     try {
-      const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
+      // Sử dụng fetch với cấu hình tối giản để tránh lỗi CORS
+      const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) throw new Error(`Lỗi kết nối: ${response.status}`);
       
       const data = await response.json();
-      console.log("Cloud data received:", data);
       
       if (data.schedule && Array.isArray(data.schedule)) {
         const currentLocalSchedule = scheduleRef.current;
         
-        // MERGE LOGIC
+        // HỢP NHẤT DỮ LIỆU (MERGE)
+        // Ưu tiên dữ liệu từ Cloud, nhưng giữ lại các lớp Local mới tạo chưa kịp sync
         const cloudIds = new Set(data.schedule.map((s: ClassSession) => s.id));
         const localOnly = currentLocalSchedule.filter(s => !cloudIds.has(s.id));
-        let combined = [...data.schedule, ...localOnly];
+        const combined = [...data.schedule, ...localOnly];
 
-        // WEEKLY CLEANUP
-        const now = new Date();
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
-        const startOfThisWeek = new Date(now.setDate(diff));
-        startOfThisWeek.setHours(0, 0, 0, 0);
-        const startOfWeekStr = startOfThisWeek.toISOString().split('T')[0];
-
-        const finalSchedule = combined.filter((s: ClassSession) => s.date >= startOfWeekStr);
+        // KHÔNG XÓA LỊCH CŨ - Giữ lại tất cả để xem được tuần trước/sau
+        // Chỉ lọc bỏ các dữ liệu rác nếu cần (ví dụ quá 1 tháng)
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const limitDate = oneMonthAgo.toISOString().split('T')[0];
+        
+        const finalSchedule = combined.filter((s: ClassSession) => s.date >= limitDate);
 
         if (JSON.stringify(finalSchedule) !== JSON.stringify(currentLocalSchedule)) {
-          if (shouldSkipLock || finalSchedule.length >= currentLocalSchedule.length) {
-            setSchedule(finalSchedule);
-            localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
-          }
+          setSchedule(finalSchedule);
+          localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
+          console.log("Đã cập nhật lịch mới từ Cloud.");
         }
       }
       
