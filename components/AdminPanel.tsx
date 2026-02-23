@@ -15,12 +15,13 @@ interface Props {
   onUpdateSchedule: (s: ClassSession[]) => void;
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   ratings: Rating[];
+  isSyncing?: boolean;
 }
 
 const AdminPanel: React.FC<Props> = ({ 
   user, headerConfig, onUpdateHeader, permissions, 
   onUpdatePermissions, rootEmail, onClose, registeredUsers,
-  schedule, onUpdateSchedule, onNotify, ratings
+  schedule, onUpdateSchedule, onNotify, ratings, isSyncing
 }) => {
   const [activeTab, setActiveTab] = useState<'SCHEDULE' | 'USERS' | 'SYSTEM' | 'RATINGS'>('SCHEDULE');
   const [tempHeader, setTempHeader] = useState<HeaderConfig>({ ...headerConfig });
@@ -118,7 +119,15 @@ const AdminPanel: React.FC<Props> = ({
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-tight">Cài Đặt Hệ Thống</h2>
-              <p className="text-[10px] text-teal-400 font-bold uppercase mt-0.5">ADMIN PANEL</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] text-teal-400 font-bold uppercase mt-0.5">ADMIN PANEL</p>
+                {isSyncing && (
+                  <span className="flex items-center gap-1 text-[8px] bg-amber-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="w-1 h-1 bg-white rounded-full animate-ping" />
+                    ĐANG ĐỒNG BỘ...
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all">

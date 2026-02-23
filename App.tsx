@@ -39,8 +39,10 @@ const App: React.FC = () => {
   const [ratingTarget, setRatingTarget] = useState<ClassSession | null>(null);
   const [userRegistry, setUserRegistry] = useState<User[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
@@ -82,22 +84,28 @@ const App: React.FC = () => {
       setIsLoading(false);
       return;
     }
+    if (isSyncing) return; // Tránh ghi đè khi đang gửi dữ liệu lên cloud
+
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       
-      if (data.schedule) setSchedule(data.schedule);
+      // Chỉ cập nhật nếu có dữ liệu hợp lệ để tránh "trắng trơn" do lỗi mạng/script
+      if (data.schedule && Array.isArray(data.schedule)) {
+        setSchedule(data.schedule);
+        localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+      }
       
       if (data.header) {
         const finalLogo = isOldLogo(data.header.logo) ? NEW_BRAND_LOGO : data.header.logo;
-        setHeaderConfig({ ...data.header, logo: finalLogo });
-      } else {
-        setHeaderConfig(DEFAULT_HEADER);
+        const newHeader = { ...data.header, logo: finalLogo };
+        setHeaderConfig(newHeader);
+        localStorage.setItem('gx_header_v7', JSON.stringify(newHeader));
       }
       
       if (data.users) setUserRegistry(data.users);
       
-      if (data.notifications) {
+      if (data.notifications && Array.isArray(data.notifications)) {
         if (notifications.length > 0 && data.notifications.length > notifications.length) {
           const latest = data.notifications[0];
           triggerNativeNotification("THÔNG BÁO GX MỚI", latest.message);
@@ -150,14 +158,22 @@ const App: React.FC = () => {
 
   const postToCloud = async (action: string, payload: any) => {
     if (!GAS_WEBAPP_URL) return;
+    setIsSyncing(true);
     try {
+      // Sử dụng text/plain để tránh lỗi CORS OPTIONS preflight với GAS
+      // GAS sẽ nhận được body và chúng ta parse JSON ở phía server
       await fetch(GAS_WEBAPP_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, data: payload })
       });
-    } catch (e) { console.warn("Sync warning:", e); }
+      // Đợi một chút để GAS xử lý xong trước khi cho phép sync lại
+      setTimeout(() => setIsSyncing(false), 3000);
+    } catch (e) { 
+      console.warn("Sync warning:", e); 
+      setIsSyncing(false);
+    }
   };
 
   const handleUpdateSchedule = (newSchedule: ClassSession[]) => {
@@ -249,7 +265,21 @@ const App: React.FC = () => {
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
-                     </div>
+                <div className="flex items-center gap-2 mt-2 justify-center lg:justify-start">
+                  <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 bg-white border rounded-xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                    <svg className="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <span className="text-[10px] font-black uppercase text-teal-900 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100">
+                    {weekOffset === 0 ? 'Tuần này' : weekOffset === 1 ? 'Tuần sau' : weekOffset === -1 ? 'Tuần trước' : `Tuần ${weekOffset > 0 ? '+' : ''}${weekOffset}`}
+                  </span>
+                  <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-2 bg-white border rounded-xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                    <svg className="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  {weekOffset !== 0 && (
+                    <button onClick={() => setWeekOffset(0)} className="text-[8px] font-black text-gray-400 uppercase hover:text-teal-600 ml-2">Hiện tại</button>
+                  )}
+                </div>
+              </div>
               <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
                 <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
@@ -258,11 +288,11 @@ const App: React.FC = () => {
 
             {isMobile ? (
               <div className="flex flex-col gap-4">
-                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} />
-                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} />
+                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} weekOffset={weekOffset} />
+                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
               </div>
             ) : (
-              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} />
+              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
             )}
           </div>
 
@@ -279,6 +309,7 @@ const App: React.FC = () => {
               permissions={permissions} onUpdatePermissions={(p) => { setPermissions(p); postToCloud('updatePermissions', p); }}
               rootEmail={ROOT_ADMIN_EMAIL} onClose={() => setShowAdmin(false)} registeredUsers={userRegistry}
               schedule={schedule} onUpdateSchedule={handleUpdateSchedule} onNotify={addNotification} ratings={ratings}
+              isSyncing={isSyncing}
             />
           </div>
         )}
