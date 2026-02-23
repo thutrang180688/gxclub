@@ -91,16 +91,24 @@ const App: React.FC = () => {
     }
   }, [permissions, currentUser?.email]);
 
-  const syncFromCloud = async () => {
+  const syncFromCloud = async (force = false) => {
     if (!GAS_WEBAPP_URL) {
+      console.warn("Chưa cấu hình VITE_GAS_URL trong môi trường.");
       loadFromLocalStorage();
       setIsLoading(false);
       return;
     }
     
-    // 1. KHÓA ĐỒNG BỘ: Nếu vừa mới cập nhật local (trong vòng 2 phút), ưu tiên dữ liệu local tuyệt đối
-    const isRecentlyUpdated = Date.now() - lastLocalUpdate.current < 120000;
-    if (isSyncing) return;
+    // Nếu lịch đang trống (máy mới/mới login), hoặc được yêu cầu force, thì bỏ qua khóa thời gian
+    const isScheduleEmpty = scheduleRef.current.length === 0;
+    const shouldSkipLock = force || isScheduleEmpty;
+
+    if (!shouldSkipLock) {
+      if (Date.now() - lastLocalUpdate.current < 120000) return;
+      if (isSyncing) return;
+    }
+
+    setIsSyncing(true);
 
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
@@ -109,16 +117,12 @@ const App: React.FC = () => {
       if (data.schedule && Array.isArray(data.schedule)) {
         const currentLocalSchedule = scheduleRef.current;
         
-        // 2. CHIẾN LƯỢC HỢP NHẤT (MERGE) - KHÔNG GHI ĐÈ
-        // Lấy tất cả từ Cloud, nhưng giữ lại những gì Local đang có mà Cloud chưa có
+        // CHIẾN LƯỢC HỢP NHẤT (MERGE)
         const cloudIds = new Set(data.schedule.map((s: ClassSession) => s.id));
         const localOnly = currentLocalSchedule.filter(s => !cloudIds.has(s.id));
-        
-        // Danh sách tổng hợp
         let combined = [...data.schedule, ...localOnly];
 
-        // 3. DỌN DẸP THEO TUẦN (CHỈ XÓA KHI HẾT TUẦN)
-        // Lấy ngày Thứ 2 của tuần hiện tại
+        // DỌN DẸP THEO TUẦN
         const now = new Date();
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
@@ -126,18 +130,15 @@ const App: React.FC = () => {
         startOfThisWeek.setHours(0, 0, 0, 0);
         const startOfWeekStr = startOfThisWeek.toISOString().split('T')[0];
 
-        // Chỉ giữ lại các lớp thuộc tuần này trở đi
         const finalSchedule = combined.filter((s: ClassSession) => s.date >= startOfWeekStr);
 
-        // Chỉ cập nhật nếu có sự thay đổi thực sự
         if (JSON.stringify(finalSchedule) !== JSON.stringify(currentLocalSchedule)) {
-          // Nếu đang trong thời gian vừa update local, và cloud trả về ít hơn -> Nghi ngờ cloud cũ, không cập nhật
-          if (isRecentlyUpdated && finalSchedule.length < currentLocalSchedule.length) {
-             console.log("Đang đợi Cloud cập nhật dữ liệu mới nhất...");
-             return;
+          // Nếu máy mới (lịch trống) hoặc force, thì luôn cập nhật
+          // Nếu máy cũ đang có dữ liệu, chỉ cập nhật nếu cloud nhiều hơn hoặc bằng
+          if (shouldSkipLock || finalSchedule.length >= currentLocalSchedule.length) {
+            setSchedule(finalSchedule);
+            localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
           }
-          setSchedule(finalSchedule);
-          localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
         }
       }
       
@@ -266,6 +267,9 @@ const App: React.FC = () => {
       setUserRegistry(updatedRegistry);
       postToCloud('loginUser', newUser);
     }
+    
+    // Sau khi login, ép buộc đồng bộ dữ liệu ngay
+    setTimeout(() => syncFromCloud(true), 1000);
   };
 
   const handleLogout = () => {
@@ -320,9 +324,9 @@ const App: React.FC = () => {
                   )}
                 </div>
               </div>
-              <button onClick={syncFromCloud} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
-                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span className="text-[10px] font-black uppercase text-slate-500">Đồng bộ</span>
+              <button onClick={() => syncFromCloud(true)} className="bg-white border p-3 rounded-2xl shadow-sm flex items-center gap-2 transition-all active:scale-95">
+                <svg className={`w-4 h-4 text-teal-600 ${isSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span className="text-[10px] font-black uppercase text-slate-500">{isSyncing ? 'Đang tải...' : 'Đồng bộ'}</span>
               </button>
             </div>
 
