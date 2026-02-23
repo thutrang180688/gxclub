@@ -31,6 +31,13 @@ const App: React.FC = () => {
   });
   
   const [schedule, setSchedule] = useState<ClassSession[]>([]);
+  const scheduleRef = React.useRef<ClassSession[]>([]);
+  
+  // Đồng bộ ref với state
+  useEffect(() => {
+    scheduleRef.current = schedule;
+  }, [schedule]);
+
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
   const [permissions, setPermissions] = useState<PermissionRecord[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -43,7 +50,12 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const lastLocalUpdate = React.useRef<number>(0);
+  const lastLocalUpdate = React.useRef<number>(Number(localStorage.getItem('gx_last_update_v7') || 0));
+
+  const setLastUpdate = (time: number) => {
+    lastLocalUpdate.current = time;
+    localStorage.setItem('gx_last_update_v7', time.toString());
+  };
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
@@ -86,27 +98,38 @@ const App: React.FC = () => {
       return;
     }
     
-    // Nếu vừa mới cập nhật local (trong vòng 15s), tạm dừng sync để tránh bị ghi đè dữ liệu cũ từ cloud
-    if (Date.now() - lastLocalUpdate.current < 15000) return;
+    // Tăng thời gian khóa lên 30s để GAS có đủ thời gian xử lý hoàn tất
+    if (Date.now() - lastLocalUpdate.current < 30000) return;
     if (isSyncing) return;
 
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       
-      // Kiểm tra tính hợp lệ của dữ liệu trước khi cập nhật
       if (data.schedule && Array.isArray(data.schedule)) {
-        // CƠ CHẾ BẢO VỆ: Nếu cloud trả về rỗng nhưng local đang có nhiều hơn 0 lớp
-        // và không phải do admin vừa thực hiện xóa sạch, thì bỏ qua việc cập nhật rỗng.
-        if (data.schedule.length === 0 && schedule.length > 0) {
-          const lastUpdateDiff = Date.now() - lastLocalUpdate.current;
-          if (lastUpdateDiff < 300000) { // Trong vòng 5 phút kể từ lần cập nhật local cuối
-             console.warn("Cloud returned empty, but local has data. Protection triggered.");
-             return;
+        const currentLocalSchedule = scheduleRef.current;
+        
+        // CƠ CHẾ BẢO VỆ NÂNG CAO:
+        // 1. Nếu cloud trả về rỗng nhưng local đang có dữ liệu -> CHẶN.
+        if (currentLocalSchedule.length > 0 && data.schedule.length === 0) {
+          console.warn("Bảo vệ: Cloud trả về rỗng.");
+          return;
+        }
+
+        // 2. Nếu số lượng lớp ở Cloud ÍT HƠN ở Local và vừa mới cập nhật gần đây (trong 2 phút)
+        // -> CHẶN (vì có thể Cloud đang trả về dữ liệu cũ chưa kịp cập nhật).
+        if (data.schedule.length < currentLocalSchedule.length) {
+          const recentUpdate = Date.now() - lastLocalUpdate.current < 120000;
+          if (recentUpdate) {
+            console.warn("Bảo vệ: Cloud trả về ít dữ liệu hơn local. Nghi ngờ dữ liệu cũ.");
+            return;
           }
         }
-        setSchedule(data.schedule);
-        localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+
+        if (JSON.stringify(data.schedule) !== JSON.stringify(currentLocalSchedule)) {
+          setSchedule(data.schedule);
+          localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+        }
       }
       
       if (data.header) {
@@ -168,7 +191,7 @@ const App: React.FC = () => {
   const postToCloud = async (action: string, payload: any) => {
     if (!GAS_WEBAPP_URL) return;
     setIsSyncing(true);
-    lastLocalUpdate.current = Date.now();
+    setLastUpdate(Date.now());
     try {
       await fetch(GAS_WEBAPP_URL, {
         method: 'POST',
@@ -176,7 +199,8 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, data: payload })
       });
-      setTimeout(() => setIsSyncing(false), 5000);
+      // Tăng thời gian chờ phản hồi từ GAS lên 15s
+      setTimeout(() => setIsSyncing(false), 15000);
     } catch (e) { 
       console.warn("Sync warning:", e); 
       setIsSyncing(false);

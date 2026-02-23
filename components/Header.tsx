@@ -75,11 +75,13 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
       <header className="bg-teal-900 text-white shadow-xl sticky top-0 z-40 border-b border-teal-800 backdrop-blur-md bg-opacity-95">
         <div className="max-w-[1440px] mx-auto px-4 h-16 lg:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-1 flex items-center justify-center min-w-[40px]">
+            <div className="p-1 flex items-center justify-center min-w-[40px] bg-transparent">
               <img 
                 src={config.logo} 
-                alt="Ciputra Logo" 
-                className="h-10 lg:h-14 w-auto object-contain transition-all duration-300"
+                alt="Ciputra Logo Header" 
+                className="h-10 lg:h-14 w-auto object-contain border-none"
+                style={{ filter: 'none', mixBlendMode: 'normal' }}
+                loading="eager"
               />
             </div>
             <div className="hidden sm:block border-l border-teal-700/50 pl-3">

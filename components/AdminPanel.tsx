@@ -59,6 +59,30 @@ const AdminPanel: React.FC<Props> = ({
     setNewClass({ ...newClass, dayIndex: idx, date: dateStr });
   };
 
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddClass = () => {
+    if (!newClass.className || !newClass.instructor || !newClass.time) {
+      alert("Vui lòng nhập đủ thông tin lớp!");
+      return;
+    }
+    setIsAdding(true);
+    const id = Date.now().toString();
+    onUpdateSchedule([...schedule, { ...newClass as ClassSession, id }]);
+    
+    // Reset form but keep date/day
+    setNewClass({
+      ...newClass,
+      className: '',
+      instructor: '',
+      time: '08:00 - 09:00'
+    });
+
+    onNotify(`Đã thêm lớp ${newClass.className} thành công!`, 'INFO');
+    
+    setTimeout(() => setIsAdding(false), 2000);
+  };
+
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -241,12 +265,22 @@ const AdminPanel: React.FC<Props> = ({
                         </div>
                       </div>
                    </div>
-                   <button onClick={() => {
-                      if (!newClass.className || !newClass.instructor || !newClass.time) return alert("Vui lòng nhập đủ thông tin lớp!");
-                      onUpdateSchedule([...schedule, {...newClass as ClassSession, id: Date.now().toString()}]);
-                      setNewClass({...newClass, className: '', instructor: ''});
-                      alert("Đã thêm thành công!");
-                   }} className="mt-8 w-full bg-teal-900 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">Xác nhận Thêm lớp</button>
+                    <button 
+                      onClick={handleAddClass} 
+                      disabled={isAdding}
+                      className={`mt-8 w-full py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 ${
+                        isAdding ? 'bg-emerald-500 text-white' : 'bg-teal-900 text-white hover:bg-teal-950'
+                      }`}
+                    >
+                      {isAdding ? (
+                        <>
+                          <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          ĐÃ THÊM THÀNH CÔNG
+                        </>
+                      ) : (
+                        'Xác nhận Thêm lớp'
+                      )}
+                    </button>
                 </section>
              </div>
           )}
