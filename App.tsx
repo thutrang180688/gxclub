@@ -98,39 +98,46 @@ const App: React.FC = () => {
       return;
     }
     
-    // 1. KHÓA ĐỒNG BỘ: Nếu vừa mới cập nhật local (trong vòng 60s), tuyệt đối không sync từ cloud
-    // để tránh việc cloud trả về dữ liệu cũ chưa kịp lưu xong.
-    if (Date.now() - lastLocalUpdate.current < 60000) return;
+    // 1. KHÓA ĐỒNG BỘ: Nếu vừa mới cập nhật local (trong vòng 2 phút), ưu tiên dữ liệu local tuyệt đối
+    const isRecentlyUpdated = Date.now() - lastLocalUpdate.current < 120000;
     if (isSyncing) return;
 
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       
-      // Kiểm tra lại khóa một lần nữa sau khi fetch xong (vì fetch có thể mất vài giây)
-      if (Date.now() - lastLocalUpdate.current < 60000) return;
-
       if (data.schedule && Array.isArray(data.schedule)) {
         const currentLocalSchedule = scheduleRef.current;
         
-        // 2. CƠ CHẾ BẢO VỆ DỮ LIỆU:
-        // Nếu cloud trả về ít lớp hơn local, nghi ngờ là dữ liệu cũ chưa cập nhật -> BỎ QUA.
-        if (data.schedule.length < currentLocalSchedule.length && currentLocalSchedule.length > 0) {
-          console.warn("Bảo vệ: Cloud trả về ít dữ liệu hơn local. Giữ lại dữ liệu local mới hơn.");
-          return;
-        }
-
-        // 3. DỌN DẸP THEO TUẦN (Thay vì theo ngày):
-        // Chỉ xóa các lớp đã cũ hơn 14 ngày để giải phóng bộ nhớ.
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        const fourteenDaysAgoStr = fourteenDaysAgo.toISOString().split('T')[0];
+        // 2. CHIẾN LƯỢC HỢP NHẤT (MERGE) - KHÔNG GHI ĐÈ
+        // Lấy tất cả từ Cloud, nhưng giữ lại những gì Local đang có mà Cloud chưa có
+        const cloudIds = new Set(data.schedule.map((s: ClassSession) => s.id));
+        const localOnly = currentLocalSchedule.filter(s => !cloudIds.has(s.id));
         
-        const cleanedSchedule = data.schedule.filter((s: ClassSession) => s.date >= fourteenDaysAgoStr);
+        // Danh sách tổng hợp
+        let combined = [...data.schedule, ...localOnly];
 
-        if (JSON.stringify(cleanedSchedule) !== JSON.stringify(currentLocalSchedule)) {
-          setSchedule(cleanedSchedule);
-          localStorage.setItem('gx_schedule_v7', JSON.stringify(cleanedSchedule));
+        // 3. DỌN DẸP THEO TUẦN (CHỈ XÓA KHI HẾT TUẦN)
+        // Lấy ngày Thứ 2 của tuần hiện tại
+        const now = new Date();
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
+        const startOfThisWeek = new Date(now.setDate(diff));
+        startOfThisWeek.setHours(0, 0, 0, 0);
+        const startOfWeekStr = startOfThisWeek.toISOString().split('T')[0];
+
+        // Chỉ giữ lại các lớp thuộc tuần này trở đi
+        const finalSchedule = combined.filter((s: ClassSession) => s.date >= startOfWeekStr);
+
+        // Chỉ cập nhật nếu có sự thay đổi thực sự
+        if (JSON.stringify(finalSchedule) !== JSON.stringify(currentLocalSchedule)) {
+          // Nếu đang trong thời gian vừa update local, và cloud trả về ít hơn -> Nghi ngờ cloud cũ, không cập nhật
+          if (isRecentlyUpdated && finalSchedule.length < currentLocalSchedule.length) {
+             console.log("Đang đợi Cloud cập nhật dữ liệu mới nhất...");
+             return;
+          }
+          setSchedule(finalSchedule);
+          localStorage.setItem('gx_schedule_v7', JSON.stringify(finalSchedule));
         }
       }
       
