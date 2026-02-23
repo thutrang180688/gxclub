@@ -10,10 +10,10 @@ interface Props {
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
-  weekOffset: number;
+  weekOffset?: number;
 }
 
-const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings, weekOffset }) => {
+const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings, weekOffset = 0 }) => {
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 

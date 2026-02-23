@@ -5,20 +5,22 @@ import { DAYS_OF_WEEK } from '../types';
 interface Props {
   selected: number;
   onSelect: (index: number) => void;
+  weekOffset?: number;
 }
 
-const DateStrip: React.FC<Props> = ({ selected, onSelect }) => {
+const DateStrip: React.FC<Props> = ({ selected, onSelect, weekOffset = 0 }) => {
   const getWeekDate = (dayIndex: number) => {
     const now = new Date();
     const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
     const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = dayIndex - currentDayMonStart;
+    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
     
     const day = targetDate.getDate();
     const month = targetDate.getMonth() + 1;
     
+    // If we're not in the current month (relative to today), show day/month
     if (targetDate.getMonth() !== now.getMonth()) {
       return day + '/' + month;
     }

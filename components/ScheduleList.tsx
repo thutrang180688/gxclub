@@ -9,10 +9,10 @@ interface Props {
   onUpdate: (newSchedule: ClassSession[]) => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
-  weekOffset: number;
+  weekOffset?: number;
 }
 
-const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings, weekOffset }) => {
+const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings, weekOffset = 0 }) => {
   const getWeekDateFull = (dayIndex: number) => {
     const now = new Date();
     const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
