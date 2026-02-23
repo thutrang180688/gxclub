@@ -10,7 +10,7 @@ interface Props {
 }
 
 const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => {
-  const [form, setForm] = useState(session);
+  const [form, setForm] = useState<any>(session);
   const [shouldNotify, setShouldNotify] = useState(false);
 
   const handleDateChange = (dateStr: string) => {

@@ -26,7 +26,7 @@ const AdminPanel: React.FC<Props> = ({
   const [tempHeader, setTempHeader] = useState<HeaderConfig>({ ...headerConfig });
   const [broadcastMsg, setBroadcastMsg] = useState('');
   
-  const [newClass, setNewClass] = useState<Partial<ClassSession>>({
+  const [newClass, setNewClass] = useState<any>({
     dayIndex: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
     date: new Date().toISOString().split('T')[0],
     time: '08:00 - 09:00', 
