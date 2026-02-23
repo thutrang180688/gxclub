@@ -27,20 +27,36 @@ const AdminPanel: React.FC<Props> = ({
   const [tempHeader, setTempHeader] = useState<HeaderConfig>({ ...headerConfig });
   const [broadcastMsg, setBroadcastMsg] = useState('');
   
-  const [newClass, setNewClass] = useState<any>({
-    dayIndex: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
-    date: new Date().toISOString().split('T')[0],
-    time: '08:00 - 09:00', 
-    className: '', 
-    instructor: '', 
-    category: 'YOGA', 
-    status: 'NORMAL'
+  const [newClass, setNewClass] = useState<any>(() => {
+    const now = new Date();
+    const dayIndex = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    return {
+      dayIndex,
+      date: now.toISOString().split('T')[0],
+      time: '08:00 - 09:00', 
+      className: '', 
+      instructor: '', 
+      category: 'YOGA', 
+      status: 'NORMAL'
+    };
   });
 
   const handleDateChange = (dateStr: string) => {
+    if (!dateStr) return;
     const date = new Date(dateStr);
     const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
     setNewClass({ ...newClass, date: dateStr, dayIndex });
+  };
+
+  const handleDayIndexChange = (idx: number) => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = idx - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    const dateStr = targetDate.toISOString().split('T')[0];
+    setNewClass({ ...newClass, dayIndex: idx, date: dateStr });
   };
 
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
@@ -175,7 +191,17 @@ const AdminPanel: React.FC<Props> = ({
                    <h3 className="text-sm font-black text-teal-900 uppercase tracking-widest mb-8">➕ Thêm lớp học mới</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Ngày học</label>
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ trong tuần</label>
+                        <select 
+                          className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" 
+                          value={newClass.dayIndex} 
+                          onChange={e => handleDayIndexChange(parseInt(e.target.value))}
+                        >
+                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Ngày học cụ thể</label>
                         <input 
                           type="date"
                           className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" 
@@ -194,12 +220,6 @@ const AdminPanel: React.FC<Props> = ({
                       <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">HLV</label>
                         <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none uppercase" value={newClass.instructor} onChange={e => setNewClass({...newClass, instructor: e.target.value.toUpperCase()})} placeholder="HLV..." />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ (Tự động theo ngày)</label>
-                        <select disabled className="w-full bg-slate-50 border rounded-2xl p-4 text-xs font-bold outline-none opacity-60" value={newClass.dayIndex} onChange={e => setNewClass({...newClass, dayIndex: parseInt(e.target.value)})}>
-                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
-                        </select>
                       </div>
                       <div className="space-y-1 lg:col-span-2">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Màu sắc / Phân loại</label>

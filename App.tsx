@@ -43,6 +43,7 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const lastLocalUpdate = React.useRef<number>(0);
 
   const isOldLogo = (url: string) => !url || url.startsWith('data:image/svg+xml') || url.includes('placeholder');
 
@@ -84,16 +85,24 @@ const App: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    if (isSyncing) return; // Tránh ghi đè khi đang gửi dữ liệu lên cloud
+    
+    // Nếu vừa mới cập nhật local (trong vòng 15s), tạm dừng sync để tránh bị ghi đè dữ liệu cũ từ cloud
+    if (Date.now() - lastLocalUpdate.current < 15000) return;
+    if (isSyncing) return;
 
     try {
       const response = await fetch(`${GAS_WEBAPP_URL}?action=getData`);
       const data = await response.json();
       
-      // Chỉ cập nhật nếu có dữ liệu hợp lệ để tránh "trắng trơn" do lỗi mạng/script
+      // Kiểm tra tính hợp lệ của dữ liệu trước khi cập nhật
       if (data.schedule && Array.isArray(data.schedule)) {
-        setSchedule(data.schedule);
-        localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+        // Nếu dữ liệu cloud trống mà local đang có dữ liệu, và vừa cập nhật gần đây, thì bỏ qua
+        if (data.schedule.length === 0 && schedule.length > 0 && (Date.now() - lastLocalUpdate.current < 60000)) {
+          console.log("Cloud returned empty schedule, but local has data. Skipping sync to prevent data loss.");
+        } else {
+          setSchedule(data.schedule);
+          localStorage.setItem('gx_schedule_v7', JSON.stringify(data.schedule));
+        }
       }
       
       if (data.header) {
@@ -106,10 +115,6 @@ const App: React.FC = () => {
       if (data.users) setUserRegistry(data.users);
       
       if (data.notifications && Array.isArray(data.notifications)) {
-        if (notifications.length > 0 && data.notifications.length > notifications.length) {
-          const latest = data.notifications[0];
-          triggerNativeNotification("THÔNG BÁO GX MỚI", latest.message);
-        }
         setNotifications(data.notifications);
       }
       
@@ -159,17 +164,15 @@ const App: React.FC = () => {
   const postToCloud = async (action: string, payload: any) => {
     if (!GAS_WEBAPP_URL) return;
     setIsSyncing(true);
+    lastLocalUpdate.current = Date.now();
     try {
-      // Sử dụng text/plain để tránh lỗi CORS OPTIONS preflight với GAS
-      // GAS sẽ nhận được body và chúng ta parse JSON ở phía server
       await fetch(GAS_WEBAPP_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, data: payload })
       });
-      // Đợi một chút để GAS xử lý xong trước khi cho phép sync lại
-      setTimeout(() => setIsSyncing(false), 3000);
+      setTimeout(() => setIsSyncing(false), 5000);
     } catch (e) { 
       console.warn("Sync warning:", e); 
       setIsSyncing(false);
