@@ -13,6 +13,23 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
   const [form, setForm] = useState(session);
   const [shouldNotify, setShouldNotify] = useState(false);
 
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = dayIndex - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-teal-950/60 backdrop-blur-lg p-4">
       <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade p-8 max-h-[90vh] overflow-y-auto">
@@ -23,7 +40,7 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ (Dời lớp)</label>
             <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
-              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({d.eng})</option>)}
+              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({getWeekDate(i)})</option>)}
             </select>
           </div>
           <div className="space-y-1">

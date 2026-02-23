@@ -38,6 +38,23 @@ const AdminPanel: React.FC<Props> = ({
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
 
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = dayIndex - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
+
   const handleUpdateUserRole = (email: string, targetRole: Role) => {
     if (!isAdmin) return;
     if (email.toLowerCase() === rootEmail.toLowerCase()) return;
@@ -156,7 +173,7 @@ const AdminPanel: React.FC<Props> = ({
                       <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ</label>
                         <select className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" value={newClass.dayIndex} onChange={e => setNewClass({...newClass, dayIndex: parseInt(e.target.value)})}>
-                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
+                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({getWeekDate(i)})</option>)}
                         </select>
                       </div>
                       <div className="space-y-1 lg:col-span-2">
