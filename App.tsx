@@ -162,6 +162,8 @@ const App: React.FC = () => {
       console.error("Cloud Error:", error);
       loadFromLocalStorage();
       setIsLoading(false);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
