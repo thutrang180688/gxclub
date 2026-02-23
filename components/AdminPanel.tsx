@@ -15,28 +15,93 @@ interface Props {
   onUpdateSchedule: (s: ClassSession[]) => void;
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   ratings: Rating[];
+  isSyncing?: boolean;
 }
 
 const AdminPanel: React.FC<Props> = ({ 
   user, headerConfig, onUpdateHeader, permissions, 
   onUpdatePermissions, rootEmail, onClose, registeredUsers,
-  schedule, onUpdateSchedule, onNotify, ratings
+  schedule, onUpdateSchedule, onNotify, ratings, isSyncing
 }) => {
   const [activeTab, setActiveTab] = useState<'SCHEDULE' | 'USERS' | 'SYSTEM' | 'RATINGS'>('SCHEDULE');
   const [tempHeader, setTempHeader] = useState<HeaderConfig>({ ...headerConfig });
   const [broadcastMsg, setBroadcastMsg] = useState('');
   
-  const [newClass, setNewClass] = useState<Partial<ClassSession>>({
-    dayIndex: 0, 
-    time: '08:00 - 09:00', 
-    className: '', 
-    instructor: '', 
-    category: 'YOGA', 
-    status: 'NORMAL'
+  const [newClass, setNewClass] = useState<any>(() => {
+    const now = new Date();
+    const dayIndex = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    return {
+      dayIndex,
+      date: now.toISOString().split('T')[0],
+      time: '08:00 - 09:00', 
+      className: '', 
+      instructor: '', 
+      category: 'YOGA', 
+      status: 'NORMAL'
+    };
   });
+
+  const handleDateChange = (dateStr: string) => {
+    if (!dateStr) return;
+    const date = new Date(dateStr);
+    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+    setNewClass({ ...newClass, date: dateStr, dayIndex });
+  };
+
+  const handleDayIndexChange = (idx: number) => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = idx - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    const dateStr = targetDate.toISOString().split('T')[0];
+    setNewClass({ ...newClass, dayIndex: idx, date: dateStr });
+  };
+
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddClass = () => {
+    if (!newClass.className || !newClass.instructor || !newClass.time) {
+      alert("Vui lòng nhập đủ thông tin lớp!");
+      return;
+    }
+    setIsAdding(true);
+    const id = Date.now().toString();
+    onUpdateSchedule([...schedule, { ...newClass as ClassSession, id }]);
+    
+    // Reset form but keep date/day
+    setNewClass({
+      ...newClass,
+      className: '',
+      instructor: '',
+      time: '08:00 - 09:00'
+    });
+
+    onNotify(`Đã thêm lớp ${newClass.className} thành công!`, 'INFO');
+    
+    setTimeout(() => setIsAdding(false), 2000);
+  };
 
   const isRootAdmin = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN';
+
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = dayIndex - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
 
   const handleUpdateUserRole = (email: string, targetRole: Role) => {
     if (!isAdmin) return;
@@ -78,6 +143,11 @@ const AdminPanel: React.FC<Props> = ({
     { key: 'OTHER', label: 'Tím', color: 'bg-indigo-500' },
   ];
 
+  // Sắp xếp đánh giá mới nhất lên trên
+  const sortedRatings = [...ratings].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
     <div className="fixed inset-0 bg-teal-950/80 backdrop-blur-xl flex items-center justify-center p-4 lg:p-8">
       <div className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden">
@@ -89,7 +159,15 @@ const AdminPanel: React.FC<Props> = ({
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-tight">Cài Đặt Hệ Thống</h2>
-              <p className="text-[10px] text-teal-400 font-bold uppercase mt-0.5">ADMIN PANEL</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] text-teal-400 font-bold uppercase mt-0.5">ADMIN PANEL</p>
+                {isSyncing && (
+                  <span className="flex items-center gap-1 text-[8px] bg-amber-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                    <span className="w-1 h-1 bg-white rounded-full animate-ping" />
+                    ĐANG ĐỒNG BỘ...
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all">
@@ -115,7 +193,7 @@ const AdminPanel: React.FC<Props> = ({
              <div className="space-y-12 animate-fade">
                 <section className="bg-amber-50 rounded-[2.5rem] p-8 border border-amber-200 shadow-sm">
                    <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-                     <span>📢</span> Gửi thông báo khẩn (Hội viên sẽ nhận được ngay)
+                     <span>📢</span> Gửi thông báo khẩn (Sẽ hiện trên màn hình điện thoại hội viên)
                    </h3>
                    <div className="space-y-4">
                      <textarea 
@@ -135,7 +213,26 @@ const AdminPanel: React.FC<Props> = ({
 
                 <section className="bg-teal-50 rounded-[2.5rem] p-8 border border-teal-100 shadow-sm">
                    <h3 className="text-sm font-black text-teal-900 uppercase tracking-widest mb-8">➕ Thêm lớp học mới</h3>
-                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ trong tuần</label>
+                        <select 
+                          className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" 
+                          value={newClass.dayIndex} 
+                          onChange={e => handleDayIndexChange(parseInt(e.target.value))}
+                        >
+                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Ngày học cụ thể</label>
+                        <input 
+                          type="date"
+                          className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" 
+                          value={newClass.date} 
+                          onChange={e => handleDateChange(e.target.value)} 
+                        />
+                      </div>
                       <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Giờ học</label>
                         <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" value={newClass.time} onChange={e => setNewClass({...newClass, time: e.target.value})} placeholder="Vd: 08:00 - 09:00" />
@@ -147,12 +244,6 @@ const AdminPanel: React.FC<Props> = ({
                       <div className="space-y-1">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">HLV</label>
                         <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none uppercase" value={newClass.instructor} onChange={e => setNewClass({...newClass, instructor: e.target.value.toUpperCase()})} placeholder="HLV..." />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Thứ</label>
-                        <select className="w-full bg-white border rounded-2xl p-4 text-xs font-bold outline-none" value={newClass.dayIndex} onChange={e => setNewClass({...newClass, dayIndex: parseInt(e.target.value)})}>
-                          {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
-                        </select>
                       </div>
                       <div className="space-y-1 lg:col-span-2">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Màu sắc / Phân loại</label>
@@ -174,12 +265,22 @@ const AdminPanel: React.FC<Props> = ({
                         </div>
                       </div>
                    </div>
-                   <button onClick={() => {
-                      if (!newClass.className || !newClass.instructor || !newClass.time) return alert("Vui lòng nhập đủ thông tin lớp!");
-                      onUpdateSchedule([...schedule, {...newClass as ClassSession, id: Date.now().toString()}]);
-                      setNewClass({...newClass, className: '', instructor: ''});
-                      alert("Đã thêm thành công!");
-                   }} className="mt-8 w-full bg-teal-900 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">Xác nhận Thêm lớp</button>
+                    <button 
+                      onClick={handleAddClass} 
+                      disabled={isAdding}
+                      className={`mt-8 w-full py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 ${
+                        isAdding ? 'bg-emerald-500 text-white' : 'bg-teal-900 text-white hover:bg-teal-950'
+                      }`}
+                    >
+                      {isAdding ? (
+                        <>
+                          <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          ĐÃ THÊM THÀNH CÔNG
+                        </>
+                      ) : (
+                        'Xác nhận Thêm lớp'
+                      )}
+                    </button>
                 </section>
              </div>
           )}
@@ -275,12 +376,12 @@ const AdminPanel: React.FC<Props> = ({
 
           {activeTab === 'RATINGS' && (
              <div className="space-y-6 animate-fade">
-               <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Phản hồi Hội viên</h3>
+               <h3 className="text-lg font-black text-teal-900 uppercase border-b pb-4">Phản hồi Hội viên (Mới nhất ở trên)</h3>
                <div className="grid gap-4">
-                  {ratings.length === 0 ? (
+                  {sortedRatings.length === 0 ? (
                     <p className="text-center py-12 text-gray-400 font-bold uppercase text-xs">Chưa có đánh giá nào</p>
                   ) : (
-                    ratings.map(r => {
+                    sortedRatings.map(r => {
                       const sessionInfo = schedule.find(s => s.id === r.classId);
                       return (
                         <div key={r.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">

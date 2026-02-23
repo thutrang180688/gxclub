@@ -1,4 +1,5 @@
 
+// v2
 export type Role = 'USER' | 'MANAGER' | 'ADMIN';
 
 export interface User {
@@ -38,6 +39,7 @@ export interface Rating {
 export interface ClassSession {
   id: string;
   dayIndex: number;
+  date: string; // YYYY-MM-DD
   time: string;
   className: string;
   instructor: string;
@@ -52,7 +54,7 @@ export interface HeaderConfig {
   hotline: string;
   website: string;
   scheduleTitle: string;
-  holidayNotice: string; // Thêm thông báo nghỉ lễ
+  holidayNotice: string;
 }
 
 export const DAYS_OF_WEEK = [

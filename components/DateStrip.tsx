@@ -5,9 +5,28 @@ import { DAYS_OF_WEEK } from '../types';
 interface Props {
   selected: number;
   onSelect: (index: number) => void;
+  weekOffset?: number;
 }
 
-const DateStrip: React.FC<Props> = ({ selected, onSelect }) => {
+const DateStrip: React.FC<Props> = ({ selected, onSelect, weekOffset = 0 }) => {
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    // If we're not in the current month (relative to today), show day/month
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
+
   return (
     <div className="bg-white border-b sticky top-16 z-30 shadow-sm w-full overflow-hidden">
       <div className="flex w-full px-1 py-2 justify-between items-center">
@@ -20,7 +39,7 @@ const DateStrip: React.FC<Props> = ({ selected, onSelect }) => {
             }`}
           >
             <span className={`text-[11px] font-bold ${selected === idx ? 'text-white' : 'text-teal-900'}`}>{day.vn}</span>
-            <span className={`text-[8px] font-light mt-0.5 opacity-80 ${selected === idx ? 'text-teal-100' : 'text-gray-400'}`}>{day.eng}</span>
+            <span className={`text-[9px] font-black mt-0.5 ${selected === idx ? 'text-teal-200' : 'text-teal-700/50'}`}>{getWeekDate(idx)}</span>
           </button>
         ))}
       </div>

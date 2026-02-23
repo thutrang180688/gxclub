@@ -10,8 +10,31 @@ interface Props {
 }
 
 const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => {
-  const [form, setForm] = useState(session);
+  const [form, setForm] = useState<any>(session);
   const [shouldNotify, setShouldNotify] = useState(false);
+
+  const handleDateChange = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+    setForm({ ...form, date: dateStr, dayIndex });
+  };
+
+  const getWeekDate = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = dayIndex - currentDayMonStart;
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    
+    const day = targetDate.getDate();
+    const month = targetDate.getMonth() + 1;
+    
+    if (targetDate.getMonth() !== now.getMonth()) {
+      return day + '/' + month;
+    }
+    return day.toString();
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-teal-950/60 backdrop-blur-lg p-4">
@@ -21,9 +44,18 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
         </h3>
         <div className="space-y-4">
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ (Dời lớp)</label>
-            <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
-              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn} ({d.eng})</option>)}
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Ngày học</label>
+            <input 
+              type="date"
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" 
+              value={form.date} 
+              onChange={e => handleDateChange(e.target.value)} 
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ (Tự động theo ngày)</label>
+            <select disabled className="w-full p-4 bg-slate-200 border border-slate-200 rounded-2xl font-bold outline-none opacity-60" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
+              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
             </select>
           </div>
           <div className="space-y-1">

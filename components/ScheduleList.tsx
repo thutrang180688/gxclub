@@ -9,9 +9,20 @@ interface Props {
   onUpdate: (newSchedule: ClassSession[]) => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
+  weekOffset?: number;
 }
 
-const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings }) => {
+const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings, weekOffset = 0 }) => {
+  const getWeekDateFull = (dayIndex: number) => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
+    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diff);
+    return targetDate.toISOString().split('T')[0];
+  };
+
   // Helper to get total minutes from time string (e.g., "08:00 - 09:00" -> 480)
   const getTimeValue = (timeStr: string) => {
     try {
@@ -23,8 +34,9 @@ const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onR
     }
   };
 
-  const classes = schedule
-    .filter(s => s.dayIndex === dayIndex)
+  const targetDateStr = getWeekDateFull(dayIndex);
+  const classes = (schedule as any[])
+    .filter(s => s.date === targetDateStr)
     .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time));
 
   const getClassRating = (classId: string) => {
@@ -43,7 +55,7 @@ const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onR
           const ratingData = getClassRating(session.id);
           return (
             <div key={session.id} className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 flex overflow-hidden animate-fade">
-              <div className={`w-3 ${CATEGORY_COLORS[session.category]}`} />
+              <div className={`w-3 ${CATEGORY_COLORS[session.category as keyof typeof CATEGORY_COLORS]}`} />
               <div className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-1">
                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{session.time}</span>
