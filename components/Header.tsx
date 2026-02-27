@@ -19,7 +19,7 @@ const Header: React.FC<Props> = ({ config, user, onGoogleLogin, onLogout, onTogg
         <div className="max-w-[1440px] mx-auto px-4 h-16 lg:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center">
-              <img src={config.logo} alt="Logo" className="h-10 lg:h-14 object-contain drop-shadow-md" />
+              <img src={config.logo} alt="Logo" className="h-10 lg:h-14 object-contain" />
             </div>
             <div className="hidden sm:block border-l border-teal-700/50 pl-3">
               <h1 className="text-sm lg:text-lg font-black leading-none tracking-tighter uppercase">CIPUTRA CLUB</h1>
