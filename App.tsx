@@ -32,7 +32,7 @@ import {
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 
 const DEFAULT_HEADER: HeaderConfig = {
-  logo: 'https://ciputraclub.vn/wp-content/uploads/2018/06/logo-ciputra-club.png',
+  logo: '/upload/logo.png',
   address: 'Xuan Dinh, Bac Tu Liem, Hanoi',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
