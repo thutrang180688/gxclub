@@ -1,5 +1,4 @@
 
-// v2
 export type Role = 'USER' | 'MANAGER' | 'ADMIN';
 
 export interface User {
@@ -39,13 +38,13 @@ export interface Rating {
 export interface ClassSession {
   id: string;
   dayIndex: number;
-  date: string; // YYYY-MM-DD
   time: string;
   className: string;
   instructor: string;
-  category: 'YOGA' | 'TAICHI' | 'DANCE' | 'OTHER';
+  category: 'YOGA' | 'TAICHI' | 'DANCE' | 'OTHER' | 'ORANGE' | 'BLUE' | 'GREEN' | 'RED' | 'YELLOW' | 'PURPLE' | 'TEAL' | 'INDIGO';
   status: ClassStatus;
   subInstructor?: string;
+  specificDate?: string; // YYYY-MM-DD
 }
 
 export interface HeaderConfig {
@@ -54,7 +53,6 @@ export interface HeaderConfig {
   hotline: string;
   website: string;
   scheduleTitle: string;
-  holidayNotice: string;
 }
 
 export const DAYS_OF_WEEK = [
@@ -71,5 +69,28 @@ export const CATEGORY_COLORS = {
   YOGA: 'bg-sky-500',
   TAICHI: 'bg-emerald-600',
   DANCE: 'bg-orange-500',
-  OTHER: 'bg-indigo-500'
+  OTHER: 'bg-indigo-500',
+  ORANGE: 'bg-orange-600',
+  BLUE: 'bg-blue-600',
+  GREEN: 'bg-green-600',
+  RED: 'bg-red-600',
+  YELLOW: 'bg-yellow-500',
+  PURPLE: 'bg-purple-600',
+  TEAL: 'bg-teal-600',
+  INDIGO: 'bg-indigo-700'
+};
+
+export const CATEGORY_LABELS = {
+  YOGA: 'Yoga',
+  TAICHI: 'Tai Chi',
+  DANCE: 'Dance',
+  OTHER: 'Khác',
+  ORANGE: 'Vàng Cam',
+  BLUE: 'Xanh Dương',
+  GREEN: 'Xanh Lá',
+  RED: 'Đỏ',
+  YELLOW: 'Vàng',
+  PURPLE: 'Tím',
+  TEAL: 'Lục',
+  INDIGO: 'Lam'
 };

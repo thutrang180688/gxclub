@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ClassSession, CATEGORY_COLORS, DAYS_OF_WEEK } from '../types';
+import { ClassSession, CATEGORY_COLORS, DAYS_OF_WEEK, CATEGORY_LABELS } from '../types';
 
 interface Props {
   session: ClassSession;
@@ -10,54 +10,16 @@ interface Props {
 }
 
 const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => {
-  const [form, setForm] = useState<any>(session);
+  const [form, setForm] = useState(session);
   const [shouldNotify, setShouldNotify] = useState(false);
-
-  const handleDateChange = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
-    setForm({ ...form, date: dateStr, dayIndex });
-  };
-
-  const getWeekDate = (dayIndex: number) => {
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = dayIndex - currentDayMonStart;
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    
-    const day = targetDate.getDate();
-    const month = targetDate.getMonth() + 1;
-    
-    if (targetDate.getMonth() !== now.getMonth()) {
-      return day + '/' + month;
-    }
-    return day.toString();
-  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-teal-950/60 backdrop-blur-lg p-4">
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade p-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md overflow-hidden animate-fade p-8 max-h-[90vh] overflow-y-auto custom-scroll">
         <h3 className="text-2xl font-black uppercase text-teal-900 mb-6 flex items-center gap-3">
           <span>📝</span> Sửa Lớp Học
         </h3>
         <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Ngày học</label>
-            <input 
-              type="date"
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" 
-              value={form.date} 
-              onChange={e => handleDateChange(e.target.value)} 
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ (Tự động theo ngày)</label>
-            <select disabled className="w-full p-4 bg-slate-200 border border-slate-200 rounded-2xl font-bold outline-none opacity-60" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
-              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
-            </select>
-          </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Giờ Học</label>
             <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
@@ -69,6 +31,45 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">HLV</label>
             <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none uppercase" value={form.instructor} onChange={e => setForm({...form, instructor: e.target.value.toUpperCase()})} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Thứ trong tuần</label>
+            <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" value={form.dayIndex} onChange={e => setForm({...form, dayIndex: parseInt(e.target.value)})}>
+              {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d.vn}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Ngày cụ thể (Tùy chọn)</label>
+            <input 
+              type="date" 
+              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:border-teal-500 outline-none" 
+              value={form.specificDate || ''} 
+              onChange={e => {
+                const dateStr = e.target.value;
+                let newDayIdx = form.dayIndex;
+                if (dateStr) {
+                  const date = new Date(dateStr);
+                  const jsDay = date.getDay();
+                  newDayIdx = jsDay === 0 ? 6 : jsDay - 1;
+                }
+                setForm({...form, specificDate: dateStr, dayIndex: newDayIdx});
+              }} 
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Màu sắc (Thể loại)</label>
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+              {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setForm({...form, category: val as any})}
+                  title={label}
+                  className={`w-8 h-8 rounded-full transition-all ${CATEGORY_COLORS[val as keyof typeof CATEGORY_COLORS]} ${
+                    form.category === val ? 'ring-4 ring-teal-900/20 scale-110 shadow-lg' : 'opacity-40 hover:opacity-100'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-400 uppercase ml-2">Trạng Thái / Thông Báo Lớp</label>

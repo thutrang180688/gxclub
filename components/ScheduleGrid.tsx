@@ -10,39 +10,27 @@ interface Props {
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
-  weekOffset?: number;
 }
 
-const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings, weekOffset = 0 }) => {
+const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings }) => {
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
-  const getWeekDateFull = (dayIndex: number) => {
+  const getWeekDates = () => {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    return targetDate.toISOString().split('T')[0];
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(now);
+    monday.setDate(diff);
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
   };
 
-  const getWeekDate = (dayIndex: number) => {
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    
-    const day = targetDate.getDate();
-    const month = targetDate.getMonth() + 1;
-    
-    if (targetDate.getMonth() !== now.getMonth()) {
-      return day + '/' + month;
-    }
-    return day.toString();
-  };
+  const weekDates = getWeekDates();
 
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);
@@ -61,45 +49,47 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
     setEditing(null);
   };
 
-  // Helper to get total minutes from time string (e.g., "08:00 - 09:00" -> 480)
-  const getTimeValue = (timeStr: string) => {
-    try {
-      const startTime = timeStr.split('-')[0].trim();
-      const [hours, minutes] = startTime.split(':').map(Number);
-      return (hours || 0) * 60 + (minutes || 0);
-    } catch (e) {
-      return 0;
-    }
-  };
-
   return (
     <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-200">
       <div className="grid grid-cols-7 bg-teal-900 text-white border-b-4 border-teal-800">
-        {DAYS_OF_WEEK.map((day, idx) => (
-          <div key={idx} className="p-4 text-center border-r border-teal-800/50 last:border-0">
-            <div className="text-[9px] font-light text-teal-300 uppercase tracking-widest">{day.eng}</div>
-            <div className="text-lg font-black tracking-tighter leading-none">{day.vn.toUpperCase()}</div>
-            <div className="text-[11px] font-black text-teal-400 mt-1">{getWeekDate(idx)}</div>
-          </div>
-        ))}
+        {DAYS_OF_WEEK.map((day, idx) => {
+          const date = weekDates[idx];
+          const dateString = `${date.getDate()}/${date.getMonth() + 1}`;
+          return (
+            <div key={idx} className="p-4 text-center border-r border-teal-800/50 last:border-0">
+              <div className="text-[9px] font-light text-teal-300 uppercase tracking-widest">{day.eng}</div>
+              <div className="text-lg font-black tracking-tighter">{day.vn.toUpperCase()}</div>
+              <div className="text-[10px] font-black text-teal-400 mt-1">{dateString}</div>
+            </div>
+          );
+        })}
       </div>
       <div className="grid grid-cols-7 divide-x divide-gray-100 bg-slate-50 min-h-[600px]">
         {DAYS_OF_WEEK.map((_, dayIdx) => {
-          const targetDateStr = getWeekDateFull(dayIdx);
+          const columnDate = weekDates[dayIdx];
+          const columnDateStr = columnDate.toISOString().split('T')[0];
+
+          const filteredClasses = schedule.filter(s => {
+            if (s.specificDate) {
+              return s.specificDate === columnDateStr;
+            }
+            return s.dayIndex === dayIdx;
+          });
+
           return (
             <div key={dayIdx} className="p-3 space-y-4">
-              {(schedule as any[])
-                .filter(s => s.date === targetDateStr)
-                .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time))
-                .map(session => {
+              {filteredClasses.sort((a, b) => a.time.localeCompare(b.time)).map(session => {
                 const avgStar = getClassRating(session.id);
                 return (
                   <div 
                     key={session.id} 
-                    className={`p-4 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm transition-all relative group flex flex-col`}
+                    className={`p-4 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm transition-all relative group flex flex-col ${session.specificDate ? 'ring-2 ring-teal-500/20' : ''}`}
                   >
-                    <div className="text-[8px] font-black text-gray-400 text-center mb-2">{session.time}</div>
-                    <div className={`text-[10px] font-black text-white text-center py-2 rounded-xl uppercase shadow-sm ${CATEGORY_COLORS[session.category as keyof typeof CATEGORY_COLORS]}`}>{session.className}</div>
+                    <div className="text-[8px] font-black text-gray-400 text-center mb-2">
+                      {session.time}
+                      {session.specificDate && <span className="block text-teal-600 mt-0.5">Sự kiện đặc biệt</span>}
+                    </div>
+                    <div className={`text-[10px] font-black text-white text-center py-2 rounded-xl uppercase shadow-sm ${CATEGORY_COLORS[session.category]}`}>{session.className}</div>
                     <div className="text-[10px] font-black text-teal-900 text-center mt-2 uppercase">{session.instructor}</div>
                     
                     <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-2">

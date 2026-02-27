@@ -9,35 +9,33 @@ interface Props {
   onUpdate: (newSchedule: ClassSession[]) => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
-  weekOffset?: number;
 }
 
-const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings, weekOffset = 0 }) => {
-  const getWeekDateFull = (dayIndex: number) => {
+const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onRate, ratings }) => {
+  const getWeekDates = () => {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const currentDayMonStart = currentDay === 0 ? 6 : currentDay - 1;
-    const diff = (dayIndex - currentDayMonStart) + (weekOffset * 7);
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + diff);
-    return targetDate.toISOString().split('T')[0];
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(now);
+    monday.setDate(diff);
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
   };
 
-  // Helper to get total minutes from time string (e.g., "08:00 - 09:00" -> 480)
-  const getTimeValue = (timeStr: string) => {
-    try {
-      const startTime = timeStr.split('-')[0].trim();
-      const [hours, minutes] = startTime.split(':').map(Number);
-      return (hours || 0) * 60 + (minutes || 0);
-    } catch (e) {
-      return 0;
+  const weekDates = getWeekDates();
+  const selectedDate = weekDates[dayIndex];
+  const selectedDateStr = selectedDate.toISOString().split('T')[0];
+
+  const classes = schedule.filter(s => {
+    if (s.specificDate) {
+      return s.specificDate === selectedDateStr;
     }
-  };
-
-  const targetDateStr = getWeekDateFull(dayIndex);
-  const classes = (schedule as any[])
-    .filter(s => s.date === targetDateStr)
-    .sort((a, b) => getTimeValue(a.time) - getTimeValue(b.time));
+    return s.dayIndex === dayIndex;
+  }).sort((a, b) => a.time.localeCompare(b.time));
 
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);
@@ -55,7 +53,7 @@ const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onR
           const ratingData = getClassRating(session.id);
           return (
             <div key={session.id} className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 flex overflow-hidden animate-fade">
-              <div className={`w-3 ${CATEGORY_COLORS[session.category as keyof typeof CATEGORY_COLORS]}`} />
+              <div className={`w-3 ${CATEGORY_COLORS[session.category]}`} />
               <div className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-1">
                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{session.time}</span>
