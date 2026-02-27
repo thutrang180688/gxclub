@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, HeaderConfig, Role, PermissionRecord, ClassSession, DAYS_OF_WEEK, Rating, CATEGORY_LABELS, CATEGORY_COLORS } from '../types';
+import { User, HeaderConfig, Role, PermissionRecord, ClassSession, DAYS_OF_WEEK, Rating, CATEGORY_LABELS, CATEGORY_COLORS, AppNotification } from '../types';
 
 interface Props {
   user: User | null;
@@ -14,6 +14,8 @@ interface Props {
   schedule: ClassSession[];
   onUpdateSchedule: (s: ClassSession[]) => void;
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
+  notifications: AppNotification[];
+  onDeleteNotification: (id: string) => void;
   ratings: Rating[];
   onDeleteRating: (id: string) => void;
 }
@@ -21,7 +23,7 @@ interface Props {
 const AdminPanel: React.FC<Props> = ({ 
   user, headerConfig, onUpdateHeader, permissions, 
   onUpdatePermissions, rootEmail, onClose, registeredUsers,
-  schedule, onUpdateSchedule, onNotify, ratings, onDeleteRating
+  schedule, onUpdateSchedule, onNotify, notifications, onDeleteNotification, ratings, onDeleteRating
 }) => {
   const isRoot = user?.email.toLowerCase() === rootEmail.toLowerCase();
   const isAdmin = user?.role === 'ADMIN' || isRoot;
@@ -199,6 +201,37 @@ const AdminPanel: React.FC<Props> = ({
                     {isSubmitting === 'notif' ? 'Đang gửi thông báo...' : 'Gửi Thông Báo Ngay'}
                   </button>
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-black text-teal-900 uppercase tracking-widest border-b pb-2">Lịch sử thông báo</h3>
+                {notifications.length === 0 ? (
+                  <p className="text-center py-10 text-gray-400 font-bold text-[10px] uppercase">Chưa có thông báo nào</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {notifications.map(n => (
+                      <div key={n.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`w-2 h-2 rounded-full ${n.type === 'ALERT' ? 'bg-red-500' : 'bg-teal-500'}`} />
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{new Date(n.timestamp).toLocaleString('vi-VN')}</span>
+                          </div>
+                          <p className="text-xs font-bold text-gray-700 leading-relaxed">{n.message}</p>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            if (confirm("Bạn có chắc chắn muốn xóa thông báo này?")) {
+                              onDeleteNotification(n.id);
+                            }
+                          }}
+                          className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

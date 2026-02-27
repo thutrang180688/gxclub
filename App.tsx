@@ -170,6 +170,10 @@ const App: React.FC = () => {
     await deleteDoc(doc(db, "ratings", id));
   };
 
+  const handleDeleteNotification = async (id: string) => {
+    await deleteDoc(doc(db, "notifications", id));
+  };
+
   const addNotification = async (message: string, type: 'INFO' | 'ALERT' = 'INFO') => {
     const id = Date.now().toString();
     const newNotif: AppNotification = { 
@@ -276,6 +280,8 @@ const App: React.FC = () => {
               schedule={schedule}
               onUpdateSchedule={handleUpdateSchedule}
               onNotify={addNotification}
+              notifications={notifications}
+              onDeleteNotification={handleDeleteNotification}
               ratings={ratings}
               onDeleteRating={handleDeleteRating}
             />
