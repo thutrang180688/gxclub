@@ -334,6 +334,14 @@ const AdminPanel: React.FC<Props> = ({
                     <label className="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Tiêu đề lịch tập</label>
                     <input className="w-full bg-white border rounded-2xl p-4 text-xs font-black" value={tempHeader.scheduleTitle} onChange={e => setTempHeader({...tempHeader, scheduleTitle: e.target.value})} />
                   </div>
+                  <div>
+                    <label className="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Link Logo (URL)</label>
+                    <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold" value={tempHeader.logo} onChange={e => setTempHeader({...tempHeader, logo: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-gray-400 uppercase ml-2 tracking-widest">Địa chỉ hiển thị</label>
+                    <input className="w-full bg-white border rounded-2xl p-4 text-xs font-bold" value={tempHeader.address} onChange={e => setTempHeader({...tempHeader, address: e.target.value})} />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Hotline</label>
