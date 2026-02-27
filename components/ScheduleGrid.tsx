@@ -78,7 +78,11 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
 
           return (
             <div key={dayIdx} className="p-3 space-y-4">
-              {filteredClasses.sort((a, b) => a.time.localeCompare(b.time)).map(session => {
+              {filteredClasses.sort((a, b) => {
+                const timeA = a.time.split('-')[0].trim().padStart(5, '0');
+                const timeB = b.time.split('-')[0].trim().padStart(5, '0');
+                return timeA.localeCompare(timeB);
+              }).map(session => {
                 const avgStar = getClassRating(session.id);
                 return (
                   <div 

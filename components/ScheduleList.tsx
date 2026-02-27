@@ -35,7 +35,11 @@ const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onR
       return s.specificDate === selectedDateStr;
     }
     return s.dayIndex === dayIndex;
-  }).sort((a, b) => a.time.localeCompare(b.time));
+  }).sort((a, b) => {
+    const timeA = a.time.split('-')[0].trim().padStart(5, '0');
+    const timeB = b.time.split('-')[0].trim().padStart(5, '0');
+    return timeA.localeCompare(timeB);
+  });
 
   const getClassRating = (classId: string) => {
     const classRatings = ratings.filter(r => r.classId === classId);
