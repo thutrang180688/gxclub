@@ -32,8 +32,8 @@ import {
 const ROOT_ADMIN_EMAIL = 'thutrang180688@gmail.com'; 
 
 const DEFAULT_HEADER: HeaderConfig = {
-  logo: 'https://live.staticflickr.com/65535/55086442379_195b472edc_o.png',
-  address: 'Phú Thượng, Hanoi',
+  logo: 'https://live.staticflickr.com/65535/55088078719_1e5e49e97d_o.jpg',
+  address: 'Phú Thượng, Hà Nội',
   hotline: '0243 743 0666',
   website: 'www.ciputraclub.vn',
   scheduleTitle: `Lịch GX - THÁNG ${new Date().getMonth() + 1} NĂM ${new Date().getFullYear()}`
