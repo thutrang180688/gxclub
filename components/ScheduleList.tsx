@@ -64,6 +64,7 @@ const ScheduleList: React.FC<Props> = ({ dayIndex, schedule, user, onUpdate, onR
                    {session.status !== 'NORMAL' && <span className="bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase">{session.status === 'CANCELLED' ? 'HỦY LỚP' : 'DẠY THAY'}</span>}
                 </div>
                 <h3 className="text-xl font-black text-teal-900 leading-tight uppercase">{session.className}</h3>
+                {session.isSpecial && <p className="text-[9px] font-black text-teal-600 uppercase tracking-widest mt-1">Sự kiện đặc biệt</p>}
                 <p className="text-gray-500 font-bold text-[10px] uppercase mt-1 tracking-tight">HLV: {session.instructor}</p>
                 
                 <div className="mt-4 flex items-center justify-between">

@@ -79,6 +79,16 @@ const ClassModal: React.FC<Props> = ({ session, onClose, onSave, onDelete }) => 
               <option value="SUBSTITUTE">Thay Giáo Viên</option>
             </select>
           </div>
+          <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+            <input 
+              type="checkbox" 
+              id="isSpecialModal"
+              className="w-5 h-5 accent-teal-600"
+              checked={form.isSpecial || false}
+              onChange={e => setForm({...form, isSpecial: e.target.checked})}
+            />
+            <label htmlFor="isSpecialModal" className="text-[10px] font-black text-teal-900 uppercase cursor-pointer">Sự kiện đặc biệt</label>
+          </div>
           <div className="pt-2 flex items-center gap-3">
             <input type="checkbox" id="notify" className="w-5 h-5 rounded-lg border-teal-500 text-teal-600 focus:ring-teal-500" checked={shouldNotify} onChange={e => setShouldNotify(e.target.checked)} />
             <label htmlFor="notify" className="text-xs font-black text-teal-700 uppercase cursor-pointer">Gửi thông báo cho hội viên</label>

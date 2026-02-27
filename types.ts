@@ -45,6 +45,7 @@ export interface ClassSession {
   status: ClassStatus;
   subInstructor?: string;
   specificDate?: string; // YYYY-MM-DD
+  isSpecial?: boolean;
 }
 
 export interface HeaderConfig {

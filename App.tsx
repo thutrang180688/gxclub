@@ -298,9 +298,9 @@ const App: React.FC = () => {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h5 className="text-xl font-black uppercase text-teal-500 tracking-[0.2em]">Liên hệ</h5>
-                <p className="text-lg font-bold">Liên hệ: {headerConfig.hotline}</p>
-                <p className="text-lg font-bold text-teal-400">{headerConfig.website}</p>
-                <p className="text-xs font-bold text-teal-600 uppercase tracking-widest mt-2">{headerConfig.address}</p>
+                <p className="text-lg">Liên hệ: {headerConfig.hotline}</p>
+                <p className="text-lg text-teal-400">{headerConfig.website}</p>
+                <p className="text-xs text-teal-600 uppercase tracking-widest mt-2">{headerConfig.address}</p>
               </div>
               <div className="pt-8 border-t border-teal-900/50">
                 <p className="text-xs text-teal-700 font-black uppercase tracking-widest">

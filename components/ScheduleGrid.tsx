@@ -91,7 +91,7 @@ const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onR
                   >
                     <div className="text-[8px] font-black text-gray-400 text-center mb-2">
                       {session.time}
-                      {session.specificDate && <span className="block text-teal-600 mt-0.5">Sự kiện đặc biệt</span>}
+                      {session.isSpecial && <span className="block text-teal-600 mt-0.5">Sự kiện đặc biệt</span>}
                     </div>
                     <div className={`text-[10px] font-black text-white text-center py-2 rounded-xl uppercase shadow-sm ${CATEGORY_COLORS[session.category]}`}>{session.className}</div>
                     <div className="text-[10px] font-black text-teal-900 text-center mt-2 uppercase">{session.instructor}</div>

@@ -322,6 +322,16 @@ const AdminPanel: React.FC<Props> = ({
                           }} 
                         />
                       </div>
+                      <div className="flex items-center gap-3 p-4 bg-white border rounded-2xl">
+                        <input 
+                          type="checkbox" 
+                          id="isSpecial"
+                          className="w-5 h-5 accent-teal-600"
+                          checked={newClass.isSpecial || false}
+                          onChange={e => setNewClass({...newClass, isSpecial: e.target.checked})}
+                        />
+                        <label htmlFor="isSpecial" className="text-[10px] font-black text-teal-900 uppercase cursor-pointer">Sự kiện đặc biệt</label>
+                      </div>
                       <div className="space-y-1 lg:col-span-3">
                         <label className="text-[9px] font-black text-gray-400 uppercase ml-2">Màu sắc (Thể loại)</label>
                         <div className="flex flex-wrap gap-2 p-2 bg-white border rounded-2xl">
@@ -344,7 +354,7 @@ const AdminPanel: React.FC<Props> = ({
                         setIsSubmitting('add-class');
                         setTimeout(() => {
                           onUpdateSchedule([...schedule, {...newClass as ClassSession, id: Date.now().toString()}]);
-                          setNewClass({...newClass, className: '', instructor: '', specificDate: ''}); 
+                          setNewClass({...newClass, className: '', instructor: '', specificDate: '', isSpecial: false}); 
                           setIsSubmitting(null);
                           alert("Đã thêm lớp học thành công!");
                         }, 800);
