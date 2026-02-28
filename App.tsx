@@ -249,9 +249,13 @@ const App: React.FC = () => {
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
-                  <div className="bg-teal-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
-                    {weekOffset === 0 ? 'Tuần này' : weekOffset === 1 ? 'Tuần sau' : weekOffset === -1 ? 'Tuần trước' : `Cách đây ${Math.abs(weekOffset)} tuần`}
-                  </div>
+                  <button 
+                    onClick={() => setWeekOffset(0)}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 ${weekOffset === 0 ? 'bg-teal-900 text-white' : 'bg-white text-teal-900 border border-teal-100 hover:bg-teal-50'}`}
+                    title="Quay về tuần hiện tại"
+                  >
+                    Tuần này
+                  </button>
                   <button 
                     onClick={() => setWeekOffset(prev => prev + 1)}
                     className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-teal-50 text-teal-900 transition-all active:scale-90"
