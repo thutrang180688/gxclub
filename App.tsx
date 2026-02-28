@@ -274,7 +274,7 @@ const App: React.FC = () => {
 
             {isMobile ? (
               <div className="flex flex-col gap-4">
-                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} />
+                <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} weekOffset={weekOffset} />
                 <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
               </div>
             ) : (

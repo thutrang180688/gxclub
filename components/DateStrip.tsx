@@ -5,13 +5,14 @@ import { DAYS_OF_WEEK } from '../types';
 interface Props {
   selected: number;
   onSelect: (index: number) => void;
+  weekOffset: number;
 }
 
-const DateStrip: React.FC<Props> = ({ selected, onSelect }) => {
+const DateStrip: React.FC<Props> = ({ selected, onSelect, weekOffset }) => {
   const getWeekDates = () => {
     const now = new Date();
     const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1) + (weekOffset * 7);
     const monday = new Date(now);
     monday.setDate(diff);
     
