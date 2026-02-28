@@ -53,6 +53,7 @@ const App: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{msg: string, type: 'INFO' | 'ALERT'} | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   // Firebase Real-time Sync
   useEffect(() => {
@@ -241,6 +242,23 @@ const App: React.FC = () => {
             <div className="mb-8 text-center lg:text-left flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
                 <h2 className="text-2xl lg:text-4xl font-black text-teal-900 uppercase tracking-tight">{headerConfig.scheduleTitle}</h2>
+                <div className="flex items-center justify-center lg:justify-start gap-4 mt-4">
+                  <button 
+                    onClick={() => setWeekOffset(prev => prev - 1)}
+                    className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-teal-50 text-teal-900 transition-all active:scale-90"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <div className="bg-teal-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">
+                    {weekOffset === 0 ? 'Tuần này' : weekOffset === 1 ? 'Tuần sau' : weekOffset === -1 ? 'Tuần trước' : `Cách đây ${Math.abs(weekOffset)} tuần`}
+                  </div>
+                  <button 
+                    onClick={() => setWeekOffset(prev => prev + 1)}
+                    className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-teal-50 text-teal-900 transition-all active:scale-90"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
@@ -253,10 +271,10 @@ const App: React.FC = () => {
             {isMobile ? (
               <div className="flex flex-col gap-4">
                 <DateStrip selected={selectedDayIndex} onSelect={setSelectedDayIndex} />
-                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onRate={setRatingTarget} ratings={ratings} />
+                <ScheduleList dayIndex={selectedDayIndex} schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
               </div>
             ) : (
-              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} />
+              <ScheduleGrid schedule={schedule} user={currentUser} onUpdate={handleUpdateSchedule} onNotify={addNotification} onRate={setRatingTarget} ratings={ratings} weekOffset={weekOffset} />
             )}
           </div>
 
@@ -298,9 +316,11 @@ const App: React.FC = () => {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h5 className="text-xl font-black uppercase text-teal-500 tracking-[0.2em]">Liên hệ</h5>
-                <p className="text-lg">Liên hệ: {headerConfig.hotline}</p>
+                <p className="text-lg">{headerConfig.hotline}</p>
                 <p className="text-lg text-teal-400">{headerConfig.website}</p>
-                <p className="text-xs text-teal-600 uppercase tracking-widest mt-2">{headerConfig.address}</p>
+                {isMobile && (
+                  <p className="text-xs text-teal-600 uppercase tracking-widest mt-2">{headerConfig.address}</p>
+                )}
               </div>
               <div className="pt-8 border-t border-teal-900/50">
                 <p className="text-xs text-teal-700 font-black uppercase tracking-widest">

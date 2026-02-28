@@ -46,6 +46,11 @@ const AdminPanel: React.FC<Props> = ({
     specificDate: ''
   });
 
+  const filteredUsers = registeredUsers.filter(u => {
+    if (!isRoot && u.email.toLowerCase() === rootEmail.toLowerCase()) return false;
+    return true;
+  });
+
   const toggleUserRole = (email: string, currentRole: Role, targetRole: Role) => {
     if (email.toLowerCase() === rootEmail.toLowerCase()) return;
     
@@ -114,10 +119,10 @@ const AdminPanel: React.FC<Props> = ({
             <div className="space-y-8 animate-fade">
               <div className="flex justify-between items-center border-b pb-4">
                 <h3 className="text-lg font-black text-teal-900 uppercase">{activeTab === 'PERMISSIONS' ? 'Phân quyền hệ thống' : 'Quản lý Manager'}</h3>
-                <span className="bg-teal-100 text-teal-700 px-4 py-1.5 rounded-full text-[9px] font-black">{registeredUsers.length} TÀI KHOẢN</span>
+                <span className="bg-teal-100 text-teal-700 px-4 py-1.5 rounded-full text-[9px] font-black">{filteredUsers.length} TÀI KHOẢN</span>
               </div>
               <div className="grid gap-4">
-                {registeredUsers.map(regUser => {
+                {filteredUsers.map(regUser => {
                   const currentPerm = permissions.find(p => p.email.toLowerCase() === regUser.email.toLowerCase());
                   const role = currentPerm?.role || (regUser.email === rootEmail ? 'ADMIN' : 'USER');
                   const isRootUser = regUser.email.toLowerCase() === rootEmail.toLowerCase();

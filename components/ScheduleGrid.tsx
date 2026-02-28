@@ -10,16 +10,17 @@ interface Props {
   onNotify: (msg: string, type: 'INFO' | 'ALERT') => void;
   onRate: (session: ClassSession) => void;
   ratings: Rating[];
+  weekOffset: number;
 }
 
-const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings }) => {
+const ScheduleGrid: React.FC<Props> = ({ schedule, user, onUpdate, onNotify, onRate, ratings, weekOffset }) => {
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const isManager = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
   const getWeekDates = () => {
     const now = new Date();
     const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1) + (weekOffset * 7);
     const monday = new Date(now);
     monday.setDate(diff);
     
