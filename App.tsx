@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Role, User, ClassSession, HeaderConfig, PermissionRecord, AppNotification, Rating } from './types';
 import Header from './components/Header';
@@ -25,6 +24,8 @@ import {
 } from 'firebase/firestore';
 import { 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -55,6 +56,13 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{msg: string, type: 'INFO' | 'ALERT'} | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
+  // Handle redirect result if redirect login was used
+  useEffect(() => {
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect Login Error:", error);
+    });
+  }, []);
+
   // Firebase Real-time Sync
   useEffect(() => {
     const unsubSchedule = onSnapshot(collection(db, "schedule"), (snapshot) => {
@@ -65,7 +73,6 @@ const App: React.FC = () => {
     const unsubHeader = onSnapshot(doc(db, "config", "header"), (snapshot) => {
       if (snapshot.exists()) setHeaderConfig(snapshot.data() as HeaderConfig);
       else {
-        // Initialize default header if not exists
         setDoc(doc(db, "config", "header"), DEFAULT_HEADER);
       }
     });
@@ -73,7 +80,6 @@ const App: React.FC = () => {
     const unsubNotifications = onSnapshot(query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(20)), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as AppNotification));
       
-      // Toast for new notifications
       if (data.length > 0 && notifications.length > 0) {
         if (data[0].id !== notifications[0].id) {
           setToast({ msg: data[0].message, type: data[0].type });
@@ -104,7 +110,6 @@ const App: React.FC = () => {
         const lowerEmail = firebaseUser.email?.toLowerCase() || '';
         let role: Role = 'USER';
         
-        // Check permissions from firestore
         const userPerm = permissions.find(p => p.email.toLowerCase() === lowerEmail);
         if (lowerEmail === ROOT_ADMIN_EMAIL) role = 'ADMIN';
         else if (userPerm) role = userPerm.role;
@@ -118,7 +123,6 @@ const App: React.FC = () => {
         };
         setCurrentUser(newUser);
 
-        // Sync user to registry
         setDoc(doc(db, "users", firebaseUser.uid), newUser, { merge: true });
       } else {
         setCurrentUser(null);
@@ -135,7 +139,7 @@ const App: React.FC = () => {
       unsubUsers();
       unsubAuth();
     };
-  }, [permissions.length]); // Re-run if permissions change to update current user role
+  }, [permissions.length]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -144,12 +148,9 @@ const App: React.FC = () => {
   }, []);
 
   const handleUpdateSchedule = async (newSchedule: ClassSession[]) => {
-    // In Firestore, we update individual docs or the whole collection
-    // For simplicity with existing logic, we'll sync individual docs
     for (const session of newSchedule) {
       await setDoc(doc(db, "schedule", session.id), session);
     }
-    // Handle deletions (if any session was removed from array)
     const currentIds = newSchedule.map(s => s.id);
     schedule.forEach(async (s) => {
       if (!currentIds.includes(s.id)) {
@@ -190,8 +191,17 @@ const App: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Login Error:", error);
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+        // Fallback to redirect if popup is blocked by browser/mobile environment
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectError) {
+          console.error("Redirect Login Error:", redirectError);
+        }
+      } else {
+        console.error("Login Error:", error);
+      }
     }
   };
 
@@ -201,7 +211,6 @@ const App: React.FC = () => {
   };
 
   const handleUpdatePermissions = async (newPerms: PermissionRecord[]) => {
-    // Sync permissions to Firestore
     for (const p of newPerms) {
       await setDoc(doc(db, "permissions", btoa(p.email)), p);
     }
